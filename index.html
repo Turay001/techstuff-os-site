@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OS Masterclass Registration</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: 'var(--bg)', surface: 'var(--surface)', surface2: 'var(--surface2)',
+          line: 'var(--line)', ink: 'var(--ink)', mute: 'var(--mute)',
+          brand: 'var(--brand)', solid: 'var(--solid)', soft: 'var(--soft)',
+          ok: 'var(--ok)', 'ok-bg': 'var(--ok-bg)', bad: 'var(--bad)',
+          'warn-bg': 'var(--warn-bg)', 'warn-fg': 'var(--warn-fg)',
+          hero: { bg: 'var(--hero-bg)', fg: 'var(--hero-fg)', mute: 'var(--hero-mute)', line: 'var(--hero-line)', chip: 'var(--hero-chip)', accent: 'var(--hero-accent)', ok: 'var(--hero-ok)' }
+        },
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace']
+        }
+      }
+    }
+  };
+</script>
+<style>
+  /* Layout: dark slate hero with a boot-log panel, then step cards, then the hold screen, unlock screen and pass. */
+  :root {
+    --bg: #f3f6fb; --surface: #ffffff; --surface2: #eef3fa; --line: #d5dfec;
+    --ink: #0f1b2d; --mute: #52647f;
+    --brand: #1d4ed8; --solid: #1d4ed8; --soft: #e8f0ff;
+    --ok: #0f7b4a; --ok-bg: #e4f6ec; --bad: #c62828;
+    --warn-bg: #fff5da; --warn-fg: #7a4f00;
+    --hero-bg: #0d1526; --hero-fg: #f1f5f9; --hero-mute: #9fb0c9; --hero-line: #2a3a57;
+    --hero-chip: #131f36; --hero-accent: #6fa8ff; --hero-ok: #4ade80;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a1020; --surface: #101a2e; --surface2: #15213a; --line: #26354f;
+      --ink: #e8eefb; --mute: #96a6c2;
+      --brand: #7db0ff; --solid: #2f6bea; --soft: #132645;
+      --ok: #4fd18b; --ok-bg: #0f2a20; --bad: #ff8f8f;
+      --warn-bg: #2a2211; --warn-fg: #f3c969;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1020; --surface: #101a2e; --surface2: #15213a; --line: #26354f;
+    --ink: #e8eefb; --mute: #96a6c2;
+    --brand: #7db0ff; --solid: #2f6bea; --soft: #132645;
+    --ok: #4fd18b; --ok-bg: #0f2a20; --bad: #ff8f8f;
+    --warn-bg: #2a2211; --warn-fg: #f3c969;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  h1, h2 { text-wrap: balance; }
+  .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hero {
+    background-color: var(--hero-bg);
+    background-image:
+      linear-gradient(to right, rgba(148,163,184,.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148,163,184,.07) 1px, transparent 1px);
+    background-size: 36px 36px;
+    margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+    padding-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+    padding-bottom: 3rem;
+    color: var(--hero-fg);
+  }
+  .collapse-grid { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .35s ease, opacity .3s ease; }
+  .collapse-grid[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
+  .collapse-inner { overflow: hidden; min-height: 0; padding: 4px; margin: -4px; }
+  .fade-in { animation: fadeIn .3s ease both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .cut { position: relative; border-top: 2px dashed var(--line); }
+  .cut::before, .cut::after {
+    content: ""; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 9999px;
+    background: var(--bg); border: 1px solid var(--line);
+  }
+  .cut::before { left: -11px; } .cut::after { right: -11px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  input, select, textarea, button { font-family: inherit; }
+  @media (prefers-reduced-motion: reduce) {
+    .collapse-grid, .fade-in { transition: none; animation: none; }
+    .animate-spin { animation: none; }
+  }
+  @media print {
+    :root:root:root {
+      --bg: #ffffff; --surface: #ffffff; --surface2: #f3f6fb; --line: #cbd5e1;
+      --ink: #0f1b2d; --mute: #52647f; --brand: #1d4ed8; --solid: #1d4ed8; --soft: #e8f0ff;
+      --ok: #0f7b4a; --ok-bg: #e4f6ec; color-scheme: light;
+    }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body * { visibility: hidden !important; }
+    .print-area, .print-area * { visibility: visible !important; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useRef, useEffect } = React;
+
+/* ============================================================
+   SETUP: paste your deployed Google Apps Script Web App URL here.
+   (Deploy > New deployment > Web app > copy the URL ending in /exec)
+   While this is unchanged, the form runs in preview mode and
+   nothing is sent anywhere. In preview, the unlock code is TS-VER-000000.
+   ============================================================ */
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIWFtezwnovvqH_l_ZeHYe6xkOX9GrOqwABR_5s6UJFRDETuhLve_k1XTXJfl_dpuKwg/exec";
+
+/* Official production configuration. Keep idYear, WEEKS and the lists below
+   in sync with CONFIG / ALLOWED in Code.gs. Exact session times were not supplied. */
+const CONFIG = {
+  idYear: "TS2026",                       // registration IDs are TS2026-XXXX
+  classTitle: "TechStuff OS Installation MasterClass",
+  deadline: "2026-12-15",
+  deadlineLabel: "15 December 2026",
+  startDate: "2027-01-02",                // interpreted from the supplied 2nd/01/207
+  startLabel: "2 January 2027",
+  classDays: "Thursdays and Saturdays",
+  durationWeeks: 3,
+  maxParticipants: 100,
+  fee: "NLe 650",
+  orangeMoney: { number: "+23274260405", name: "Alimamy Turay" },
+  supportContact: "+23274260405",
+  paymentVerifier: "TechStuff Academy",
+  sessionLabel: "Thursdays and Saturdays - 3 weeks (time to be confirmed)",
+};
+
+const IS_PREVIEW = !GOOGLE_SCRIPT_URL || /PASTE_YOUR/i.test(GOOGLE_SCRIPT_URL);
+const FRONTEND_CONFIG_PROBLEMS = [];
+if (/XXX/i.test(CONFIG.fee)) FRONTEND_CONFIG_PROBLEMS.push("the course fee");
+if (/\bXX\b|XXX/i.test(CONFIG.orangeMoney.number)) FRONTEND_CONFIG_PROBLEMS.push("the Orange Money number");
+if (CONFIG.idYear !== "TS2026") FRONTEND_CONFIG_PROBLEMS.push("the registration ID year");
+if (!(CONFIG.maxParticipants > 0)) FRONTEND_CONFIG_PROBLEMS.push("the participant limit");
+const LIVE_CONFIG_READY = FRONTEND_CONFIG_PROBLEMS.length === 0;
+const MAX_BYTES = 5 * 1024 * 1024;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const CODE_RE = /^TS-VER-\d{4,6}$/; // 6-digit codes are issued; older 4-5 digit codes still verify
+
+const SKILLS = [
+  { id: "Beginner", icon: "Sprout", desc: "New to installing operating systems." },
+  { id: "Intermediate", icon: "TrendingUp", desc: "Have installed an OS before, want more confidence." },
+  { id: "Advanced", icon: "Rocket", desc: "Comfortable with BIOS and want deeper partitioning skills." },
+];
+const TRACKS = [
+  { id: "Windows 10/11", icon: "Monitor", desc: "Clean installation, start to finish." },
+  { id: "Ubuntu/Linux", icon: "Terminal", desc: "Install and set up a Linux desktop." },
+  { id: "Dual-Booting", icon: "Layers", desc: "Windows and Linux on one machine." },
+  { id: "Bootable Media & Partitioning", icon: "Usb", desc: "USB creation and disk partitioning." },
+];
+const WEEKS = [
+  { n: 1, title: "Foundations and installation", items: ["Bootable media", "BIOS/UEFI setup", "Windows installation", "Linux installation"] },
+  { n: 2, title: "Advanced setup and repair", items: ["Dual-booting", "Disk partitioning", "Troubleshooting", "Drivers"] },
+  { n: 3, title: "Final session", items: ["Exact topics and times to be confirmed by TechStuff"] },
+];
+const COHORTS = [
+  { id: CONFIG.sessionLabel, icon: "CalendarDays", desc: "Exact session times will be confirmed by TechStuff." },
+];
+const OS_SUGGESTIONS = ["Windows 11", "Windows 10", "Windows 7", "Ubuntu / Linux", "macOS", "No OS installed", "Not sure"];
+
+const INITIAL = {
+  name: "", email: "", phone: "+232 ", org: "",
+  laptop: "", model: "", os: "",
+  skill: "", tracks: [], session: "",
+  website: "", /* honeypot: real people never see or fill this */
+};
+
+function makeRegId() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 4; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return CONFIG.idYear + "-" + out;
+}
+function normCode(s) {
+  const t = String(s || "").toUpperCase().replace(/\s+/g, "");
+  return /^\d{4,6}$/.test(t) ? "TS-VER-" + t : t;
+}
+function fmtSize(b) { return b < 1024 * 1024 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1024 / 1024).toFixed(1) + " MB"; }
+function imageFileError(file) {
+  const okType = /^image\/(jpeg|png|webp)$/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+  if (!okType) return "Upload a .jpg, .png or .webp image.";
+  if (file.size > MAX_BYTES) return "That file is " + fmtSize(file.size) + ". The limit is 5 MB.";
+  return "";
+}
+
+function validate(v, receipt, receiptError, additionalImageError) {
+  const e = {};
+  if (v.name.trim().length < 3) e.name = "Enter your full name.";
+  if (!EMAIL_RE.test(v.email.trim())) e.email = "Enter a valid email address. Your confirmation is sent here.";
+  const digits = v.phone.replace(/[\s().-]/g, "");
+  if (!/^\+\d{8,15}$/.test(digits)) e.phone = "Use international format, for example +232 76 123456.";
+  else if (digits.indexOf("+232") === 0 && digits.length !== 12) e.phone = "Sierra Leone numbers have 8 digits after +232.";
+  if (!v.laptop) e.laptop = "Tell us whether you will bring your own laptop.";
+  if (v.laptop === "yes") {
+    if (!v.model.trim()) e.model = "Enter your laptop brand and model.";
+    if (!v.os.trim()) e.os = "Enter the operating system currently installed, or write None.";
+  }
+  if (!v.skill) e.skill = "Choose your skill level.";
+  if (v.tracks.length === 0) e.tracks = "Select at least one track.";
+  if (!v.session) e.session = "Choose the class schedule.";
+  if (receiptError) e.receipt = receiptError;
+  else if (!receipt) e.receipt = "Upload your Orange Money payment screenshot.";
+  if (additionalImageError) e.additionalImage = additionalImageError;
+  return e;
+}
+const FIELD_ORDER = ["name", "email", "phone", "laptop", "model", "os", "skill", "tracks", "session", "receipt", "additionalImage"];
+
+/* ---------- Backend calls ---------- */
+let MOCK = null; /* preview mode only */
+
+async function callScript(payload, timeoutMs) {
+  if (IS_PREVIEW) {
+    await new Promise((r) => setTimeout(r, 1100));
+    if (payload.action === "submit_pending") {
+      MOCK = payload;
+      return { status: "ok" };
+    }
+    if (payload.code === "TS-VER-000000") {
+      const m = MOCK || { name: "Sample Student", phone: "+232 76 123456", org: "", laptop: "No", skill: "Beginner", tracks: ["Windows 10/11"], session: COHORTS[0].id };
+      return { status: "ok", emailSent: true, alreadyVerified: false, registration: {
+        regId: makeRegId(), name: m.name, email: payload.email, phone: m.phone, org: m.org || "",
+        laptop: m.laptop, model: m.laptopModel || "", os: m.currentOS || "", skill: m.skill, tracks: m.tracks, session: m.session,
+      } };
+    }
+    return { status: "error", message: "Invalid verification code or email" };
+  }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    /* text/plain keeps this a "simple" request, so the browser skips the CORS preflight that Apps Script cannot answer. */
+    const res = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST", redirect: "follow", signal: ctrl.signal,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch (e) { throw new Error("BAD_RESPONSE"); }
+  } finally { clearTimeout(timer); }
+}
+function netMessage(err) {
+  if (err && err.message === "BAD_RESPONSE") return "The server sent an unexpected reply. Check that the Web App is deployed with access set to Anyone, then try again.";
+  if (err && err.name === "AbortError") return "The request took too long. Check your connection and try again.";
+  return "We could not reach the registration server. Check your internet connection and try again.";
+}
+
+/* Reads the file, shrinks large screenshots to keep the upload fast, and returns base64 without the data: prefix. */
+function readDataUrl(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file); });
+}
+function loadImage(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+}
+/* Browsers sometimes report an empty or non-standard MIME type. Derive it from the
+   extension as a fallback so the backend accepts exactly jpeg/png/webp. */
+function receiptMime(file) {
+  const match = /\.([^.]+)$/.exec(String(file.name || ""));
+  const ext = match ? match[1].toLowerCase() : "";
+  const byExt = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" }[ext] || "";
+  const byType = /^image\/(jpeg|png|webp)$/.test(String(file.type || "")) ? file.type : "";
+  return byType || byExt || "image/jpeg";
+}
+function base64ByteCount(b64) {
+  const s = String(b64 || "");
+  const pad = s.endsWith("==") ? 2 : s.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor(s.length * 3 / 4) - pad);
+}
+async function prepareReceipt(file, baseName = "receipt") {
+  const dataUrl = await readDataUrl(file);
+  const base = file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "_").slice(0, 40) || baseName;
+  const b64 = String(dataUrl).split(",")[1];
+  const raw = {
+    filename: file.name, mimeType: receiptMime(file), base64: b64,
+    bytes: file.size, width: 0, height: 0,
+  };
+  try {
+    const img = await loadImage(dataUrl);
+    raw.width = img.naturalWidth; raw.height = img.naturalHeight;
+    const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    if (scale === 1 && file.size <= 1.5 * 1024 * 1024) return raw;
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    const outB64 = c.toDataURL("image/jpeg", 0.85).split(",")[1];
+    return {
+      filename: base + ".jpg", mimeType: "image/jpeg", base64: outB64,
+      bytes: base64ByteCount(outB64), width: c.width, height: c.height,
+    };
+  } catch (e) { return raw; }
+}
+
+/* ---------- Icons (Lucide) ---------- */
+function Icon({ name, size = 18, className = "", strokeWidth = 2 }) {
+  const lib = window.lucide && window.lucide.icons;
+  const node = lib && lib[name];
+  if (!node) return <span aria-hidden="true" style={{ display: "inline-block", width: size, height: size }} />;
+  const children = Array.isArray(node[0]) ? node : (node[2] || []);
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      className={"shrink-0 " + className} aria-hidden="true" focusable="false">
+      {children.map((c, i) => React.createElement(c[0], Object.assign({ key: i }, c[1])))}
+    </svg>
+  );
+}
+
+/* ---------- Form building blocks ---------- */
+const inputCls = (err) =>
+  "w-full rounded-lg border bg-surface px-3.5 py-2.5 pr-10 text-[15px] text-ink placeholder:text-mute/70 transition focus:outline-none focus:ring-2 focus:ring-brand " +
+  (err ? "border-bad" : "border-line");
+const btnPrimary = "flex w-full items-center justify-center gap-2 rounded-xl bg-solid px-5 py-3.5 text-[15px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+const btnGhost = "inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-5 py-3 text-[15px] font-semibold text-ink transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+
+function Field({ id, label, required, optional, hint, error, children }) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 flex items-baseline gap-2 text-sm font-medium text-ink">
+        {label}
+        {required ? <span className="text-bad" aria-hidden="true">*</span> : null}
+        {optional ? <span className="text-xs font-normal text-mute">Optional</span> : null}
+      </label>
+      {children}
+      {error ? (
+        <p id={id + "-msg"} role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-bad">
+          <Icon name="CircleAlert" size={14} />{error}
+        </p>
+      ) : (
+        <p id={id + "-msg"} className={hint ? "mt-1.5 text-xs text-mute" : "hidden"}>{hint || ""}</p>
+      )}
+    </div>
+  );
+}
+
+function TextInput({ id, value, onChange, onBlur, error, valid, list, className = "", ...rest }) {
+  return (
+    <div className="relative">
+      <input id={id} name={id} value={value} onChange={onChange} onBlur={onBlur} list={list}
+        aria-invalid={error ? "true" : "false"} aria-describedby={id + "-msg"}
+        className={inputCls(error) + (className ? " " + className : "")} {...rest} />
+      {valid && !error ? (
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ok"><Icon name="CircleCheck" size={18} /></span>
+      ) : null}
+    </div>
+  );
+}
+
+function Section({ step, title, subtitle, children }) {
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+      <header className="mb-6 flex items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-soft font-mono text-sm font-semibold text-brand">{step}</span>
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold leading-tight text-ink">{title}</h2>
+          <p className="mt-0.5 text-sm text-mute">{subtitle}</p>
+        </div>
+      </header>
+      <div className="space-y-6">{children}</div>
+    </section>
+  );
+}
+
+function Group({ id, legend, required, error, hint, children }) {
+  return (
+    <fieldset id={id + "-group"} tabIndex={-1} aria-describedby={error ? id + "-group-msg" : undefined} className="min-w-0 focus:outline-none">
+      <legend className="mb-2 flex items-baseline gap-2 text-sm font-medium text-ink">
+        {legend}{required ? <span className="text-bad" aria-hidden="true">*</span> : null}
+        {hint ? <span className="text-xs font-normal text-mute">{hint}</span> : null}
+      </legend>
+      {children}
+      {error ? (
+        <p id={id + "-group-msg"} role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-medium text-bad"><Icon name="CircleAlert" size={14} />{error}</p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+function OptionCard({ type, name, value, checked, onChange, icon, title, desc }) {
+  return (
+    <label className="relative block cursor-pointer">
+      <input type={type} name={name} value={value} checked={checked} onChange={onChange} className="peer sr-only" />
+      <div className={"flex h-full items-start gap-3 rounded-xl border p-4 transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand " +
+        (checked ? "border-brand bg-soft" : "border-line bg-surface hover:border-brand")}>
+        <span className={"mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg " + (checked ? "bg-solid text-white" : "bg-surface2 text-brand")}>
+          <Icon name={icon} size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold text-ink">{title}</span>
+          <span className="mt-0.5 block text-[13px] leading-snug text-mute">{desc}</span>
+        </span>
+        <span className={"mt-1 flex h-5 w-5 shrink-0 items-center justify-center border " + (type === "radio" ? "rounded-full " : "rounded-md ") +
+          (checked ? "border-brand bg-solid text-white" : "border-line bg-surface text-transparent")}>
+          <Icon name="Check" size={13} strokeWidth={3} />
+        </span>
+      </div>
+    </label>
+  );
+}
+
+function Collapse({ open, children }) {
+  return (
+    <div className="collapse-grid" data-open={open ? "true" : "false"}>
+      <div className="collapse-inner" aria-hidden={open ? "false" : "true"} inert={open ? undefined : ""}>{children}</div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-line py-2 last:border-b-0">
+      <dt className="text-sm text-mute">{label}</dt>
+      <dd className={"text-right text-sm font-semibold text-ink " + (mono ? "font-mono" : "")}>{value}</dd>
+    </div>
+  );
+}
+
+function Notice({ tone, icon, children }) {
+  const cls = tone === "ok" ? "bg-ok-bg text-ok" : tone === "warn" ? "bg-warn-bg text-warn-fg" : "border border-bad text-bad";
+  return (
+    <div role={tone === "bad" ? "alert" : undefined} className={"flex items-start gap-3 rounded-xl p-4 text-sm " + cls}>
+      <Icon name={icon} size={19} className="mt-0.5" /><div className="min-w-0 break-words">{children}</div>
+    </div>
+  );
+}
+
+/* ---------- Schedule ---------- */
+function Curriculum() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {WEEKS.map((w) => (
+        <div key={w.n} className="rounded-xl border border-line bg-surface2 p-4">
+          <p className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-brand">Week {w.n}</p>
+          <p className="mt-1 text-[15px] font-semibold text-ink">{w.title}</p>
+          <ul className="mt-3 space-y-1.5 text-sm text-ink">
+            {w.items.map((it) => (
+              <li key={it} className="flex items-center gap-2"><Icon name="Check" size={14} className="text-brand" />{it}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Orange Money + receipt ---------- */
+function OrangeMoneyPanel() {
+  const steps = [
+    "Send the class fee by Orange Money to the merchant number below.",
+    "Take a screenshot of the confirmation message. It should show the amount, number, transaction ID and date.",
+    "Upload the screenshot here and submit it for verification.",
+    "We verify it, then send you a Unique Verification Code by WhatsApp or SMS to unlock your registration.",
+  ];
+  return (
+    <div className="rounded-xl border border-line bg-surface2 p-4 sm:p-5">
+      <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink"><Icon name="Smartphone" size={16} className="text-brand" />Pay with Orange Money</p>
+      <dl className="mb-4 rounded-lg border border-line bg-surface px-4 py-1">
+        <DetailRow label="Class fee" value={CONFIG.fee} />
+        <DetailRow label="Merchant / account number" value={CONFIG.orangeMoney.number} mono />
+        <DetailRow label="Account name" value={CONFIG.orangeMoney.name} />
+        <DetailRow label="Student support" value={CONFIG.supportContact} mono />
+      </dl>
+      <div className="mb-4"><Notice tone="warn" icon="CircleAlert">
+        Submitting this form does not confirm your payment or reserve a seat. Your registration is only confirmed after TechStuff verifies your Orange Money receipt and you complete verification with the code sent to you.
+      </Notice></div>
+      <ol className="space-y-2 text-sm text-ink">
+        {steps.map((s, i) => (
+          <li key={i} className="flex gap-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-soft font-mono text-[11px] font-semibold text-brand">{i + 1}</span>
+            <span className="min-w-0">{s}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function Dropzone({ receipt, error, onFile, onRemove, id = "receipt", title = "Drop your screenshot here, or click to choose", alt = "Preview of your uploaded image", hint = "Check that the amount and transaction ID are readable." }) {
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef(null);
+  const drop = (e) => {
+    e.preventDefault(); setDrag(false);
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) onFile(f);
+  };
+  return (
+    <div>
+      <input ref={inputRef} id={id} type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" className="peer sr-only"
+        aria-invalid={error ? "true" : "false"} aria-describedby={error ? id + "-msg" : undefined}
+        onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = ""; }} />
+      {receipt ? (
+        <div className="fade-in flex flex-col gap-4 rounded-xl border border-line bg-surface p-3 sm:flex-row sm:items-center">
+          <img src={receipt.url} alt={alt} className="max-h-64 w-full rounded-lg border border-line bg-surface2 object-contain sm:h-32 sm:w-32" />
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 break-all text-sm font-semibold text-ink"><Icon name="CircleCheck" size={16} className="text-ok" />{receipt.file.name}</p>
+            <p className="mt-0.5 text-xs text-mute">{fmtSize(receipt.file.size)}. {hint}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-brand">
+                <Icon name="Upload" size={14} />Replace
+              </label>
+              <button type="button" onClick={onRemove} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-bad hover:text-bad focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                <Icon name="X" size={14} />Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <label htmlFor={id}
+          onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={drop}
+          className={"flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand " +
+            (drag ? "border-brand bg-soft" : error ? "border-bad bg-surface" : "border-line bg-surface hover:border-brand")}>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-soft text-brand"><Icon name="Upload" size={20} /></span>
+          <span className="text-[15px] font-semibold text-ink">{title}</span>
+          <span className="text-xs text-mute">.jpg, .png or .webp, up to 5 MB</span>
+        </label>
+      )}
+      {error ? (
+        <p id={id + "-msg"} role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-medium text-bad"><Icon name="CircleAlert" size={14} />{error}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/* ---------- Hero ---------- */
+function Hero() {
+  const pills = [["Wrench", "Hands-On Practical"], ["CalendarDays", CONFIG.durationWeeks + "-Week Intensive"], ["Users", CONFIG.maxParticipants + " Seats Max"], ["CalendarDays", CONFIG.classDays]];
+  const log = ["Enter BIOS/UEFI setup", "Create a bootable USB drive", "Partition the disk", "Run a clean OS installation"];
+  return (
+    <header className="hero">
+      <div className="gutter mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1.25fr_1fr]">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-hero-line bg-hero-chip py-1.5 pl-1.5 pr-4">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-solid text-white"><Icon name="Terminal" size={15} /></span>
+            <span className="font-display text-sm font-semibold tracking-wide">TECHSTUFF</span>
+            <span className="text-xs text-hero-mute">Tech Academy</span>
+          </div>
+          <h1 className="mt-5 font-display text-[2rem] font-bold leading-[1.1] tracking-tight sm:text-5xl">
+            {CONFIG.classTitle}
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-hero-mute">
+            Over {CONFIG.durationWeeks} intensive weeks, learn to set up and install an operating system from scratch on real hardware, from configuring BIOS/UEFI and creating a bootable USB drive to partitioning disks and completing a clean installation. Classes run {CONFIG.classDays}.
+          </p>
+          <p className="mt-2 text-sm font-medium text-hero-accent">
+            Starts {CONFIG.startLabel} &middot; Register by {CONFIG.deadlineLabel} &middot; Exact session times to be confirmed
+          </p>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {pills.map((p) => (
+              <li key={p[1]} className="inline-flex items-center gap-2 rounded-full border border-hero-line bg-hero-chip px-3.5 py-1.5 text-[13px] font-medium">
+                <Icon name={p[0]} size={14} className="text-hero-accent" />{p[1]}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="min-w-0 rounded-xl border border-hero-line bg-hero-chip p-4 font-mono text-[13px] leading-7 shadow-lg sm:p-5">
+          <p className="text-hero-mute"><span className="text-hero-accent">techstuff@lab</span> ~ $ install --guided</p>
+          {log.map((l) => (
+            <p key={l}><span className="text-hero-ok">[ OK ]</span> <span className="text-hero-fg">{l}</span></p>
+          ))}
+          <p className="text-hero-mute">System ready<span className="ml-1 inline-block h-4 w-2 translate-y-0.5 bg-hero-accent" aria-hidden="true"></span></p>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ---------- Stage 2: verify code ---------- */
+function VerifyBox({ initialEmail, onVerified }) {
+  const [email, setEmail] = useState(initialEmail || "");
+  const [code, setCode] = useState("");
+  const [touched, setTouched] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const emailErr = EMAIL_RE.test(email.trim()) ? "" : "Enter the email you registered with.";
+  const codeErr = CODE_RE.test(normCode(code)) ? "" : "Enter your 6-digit code, for example TS-VER-849213.";
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setTouched({ email: true, code: true }); setErr("");
+    if (emailErr || codeErr) return;
+    setBusy(true);
+    try {
+      const res = await callScript({ action: "verify_code", email: email.trim(), code: normCode(code) }, 30000);
+      if (res && res.status === "ok" && res.registration) onVerified(res);
+      else setErr((res && res.message) || "Invalid verification code or email");
+    } catch (ex) { setErr(netMessage(ex)); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="v-email" label="Email" required error={touched.email ? emailErr : ""}>
+          <TextInput id="v-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched((t) => Object.assign({}, t, { email: true }))}
+            error={touched.email ? emailErr : ""} autoComplete="email" inputMode="email" placeholder="you@example.com" />
+        </Field>
+        <Field id="v-code" label="Unique Verification Code" required error={touched.code ? codeErr : ""}>
+          <TextInput id="v-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} onBlur={() => setTouched((t) => Object.assign({}, t, { code: true }))}
+            error={touched.code ? codeErr : ""} autoComplete="off" autoCapitalize="characters" spellCheck="false" placeholder="TS-VER-849213" className="font-mono" />
+        </Field>
+      </div>
+      {err ? <Notice tone="bad" icon="CircleAlert">{err}</Notice> : null}
+      <button type="submit" disabled={busy} className={btnPrimary}>
+        {busy ? (<><Icon name="LoaderCircle" size={18} className="animate-spin" />Verifying...</>) : (<><Icon name="KeyRound" size={18} />Verify &amp; Complete Registration</>)}
+      </button>
+    </form>
+  );
+}
+
+function PendingView({ info, onVerified }) {
+  return (
+    <div className="space-y-5">
+      <article className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-hero-bg px-5 py-4 text-hero-fg sm:px-8">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-solid text-white"><Icon name="Terminal" size={16} /></span>
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wide">TECHSTUFF</p>
+              <p className="text-xs text-hero-mute">OS Installation Masterclass</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip px-3 py-1 text-xs font-medium">
+            <Icon name="Hourglass" size={13} className="text-hero-accent" />On Hold
+          </span>
+        </div>
+        <div className="p-5 sm:p-8">
+          <h2 className="font-display text-2xl font-semibold text-ink">Payment under review</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-mute">
+            TechStuff is verifying your Orange Money receipt. Your registration stays on hold until that is done. Once your payment is confirmed, we send your Unique Verification Code to <strong className="text-ink">{info.phone}</strong> by WhatsApp or SMS.
+          </p>
+          {info.notice ? <div className="mt-4"><Notice tone="warn" icon="Info">{info.notice}</Notice></div> : null}
+          <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
+            <dl className="grid min-w-0 gap-x-8 gap-y-4 sm:grid-cols-2">
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Participant</dt><dd className="mt-1 break-words text-[15px] font-medium text-ink">{info.name}</dd></div>
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Email</dt><dd className="mt-1 break-words text-[15px] font-medium text-ink">{info.email}</dd></div>
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Schedule</dt><dd className="mt-1 text-[15px] font-medium text-ink">{info.session}</dd></div>
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Skill level</dt><dd className="mt-1 text-[15px] font-medium text-ink">{info.skill}</dd></div>
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Hardware</dt><dd className="mt-1 break-words text-[15px] font-medium text-ink">{info.laptop === "yes" ? "Own laptop: " + info.model : "Shared lab workstation"}</dd></div>
+              <div className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Payment</dt><dd className="mt-1 text-[15px] font-medium text-ink">Orange Money <span className="ml-1 rounded-full bg-warn-bg px-2 py-0.5 text-xs font-medium text-warn-fg">Pending</span></dd></div>
+              <div className="min-w-0 sm:col-span-2">
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Target OS tracks</dt>
+                <dd className="mt-2 flex flex-wrap gap-2">{info.tracks.map((t) => <span key={t} className="rounded-full bg-soft px-3 py-1 text-[13px] font-medium text-brand">{t}</span>)}</dd>
+              </div>
+            </dl>
+            {info.receiptUrl || info.additionalImageUrl ? (
+              <div className="flex w-full flex-row gap-4 sm:w-36 sm:flex-col">
+                {info.receiptUrl ? (
+                  <figure className="min-w-0 flex-1 sm:w-full">
+                    <img src={info.receiptUrl} alt="Your submitted Orange Money screenshot" className="max-h-52 w-full rounded-lg border border-line bg-surface2 object-contain" />
+                    <figcaption className="mt-1.5 text-center text-xs text-mute">Submitted receipt</figcaption>
+                  </figure>
+                ) : null}
+                {info.additionalImageUrl ? (
+                  <figure className="min-w-0 flex-1 sm:w-full">
+                    <img src={info.additionalImageUrl} alt="Your submitted additional image" className="max-h-52 w-full rounded-lg border border-line bg-surface2 object-contain" />
+                    <figcaption className="mt-1.5 text-center text-xs text-mute">Additional image</figcaption>
+                  </figure>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </article>
+
+      <section className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+        <div className="mb-4 flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-soft text-brand"><Icon name="KeyRound" size={18} /></span>
+          <div className="min-w-0">
+            <h3 className="font-display text-lg font-semibold leading-tight text-ink">Already received your Unique Verification Code?</h3>
+            <p className="mt-0.5 text-sm text-mute">Enter it below to unlock and complete your registration. You can close this page and come back any time: use "Enter verification code" on the registration page with your email and code.</p>
+          </div>
+        </div>
+        <VerifyBox initialEmail={info.email} onVerified={onVerified} />
+        {IS_PREVIEW ? <p className="mt-3 text-xs text-warn-fg">Preview mode: use the code TS-VER-000000.</p> : null}
+      </section>
+    </div>
+  );
+}
+
+function UnlockView({ onVerified, onBack }) {
+  return (
+    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+      <button type="button" onClick={onBack} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+        <Icon name="ArrowLeft" size={16} />Back to registration
+      </button>
+      <div className="mb-5 flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-soft text-brand"><Icon name="KeyRound" size={18} /></span>
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold leading-tight text-ink">Enter your verification code</h2>
+          <p className="mt-0.5 text-sm text-mute">Use the email you registered with and the Unique Verification Code we sent you by WhatsApp or SMS.</p>
+        </div>
+      </div>
+      <VerifyBox initialEmail="" onVerified={onVerified} />
+      {IS_PREVIEW ? <p className="mt-3 text-xs text-warn-fg">Preview mode: use the code TS-VER-000000 with any valid email.</p> : null}
+    </section>
+  );
+}
+
+/* ---------- Confirmed pass ---------- */
+function PassItem({ label, children }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">{label}</dt>
+      <dd className="mt-1 break-words text-[15px] font-medium text-ink">{children}</dd>
+    </div>
+  );
+}
+
+function Pass({ pass, meta, onReset }) {
+  const [copied, setCopied] = useState(false);
+  const copyId = async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(pass.regId); ok = true; } catch (e) {
+      try {
+        const t = document.createElement("textarea");
+        t.value = pass.regId; document.body.appendChild(t); t.select();
+        ok = document.execCommand("copy"); document.body.removeChild(t);
+      } catch (e2) {}
+    }
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 1800); }
+  };
+  const doPrint = () => { try { window.print(); } catch (e) {} };
+  const hasLaptop = pass.laptop === "Yes" || pass.laptop === "yes";
+
+  return (
+    <div className="space-y-5">
+      {meta.emailSent ? (
+        <div className="no-print"><Notice tone="ok" icon={meta.alreadyVerified ? "BadgeCheck" : "MailCheck"}>
+          <p className="font-semibold">{meta.alreadyVerified ? "Your registration is already confirmed." : "Payment verified. You are registered."}</p>
+          <p className="mt-0.5">{meta.alreadyVerified
+            ? "Your confirmation email was sent when your payment was first verified."
+            : <>A confirmation email with your class WhatsApp group link has been sent to <strong>{pass.email}</strong>. Check your spam or promotions folder if you do not see it.</>}</p>
+        </Notice></div>
+      ) : meta.emailStatus === "failed" ? (
+        <div className="no-print"><Notice tone="warn" icon="TriangleAlert"><p className="font-semibold">Payment verified. You are registered.</p><p className="mt-0.5">We could not send the confirmation email to {pass.email}. Save or print this pass and contact TechStuff for the class group link.</p></Notice></div>
+      ) : (
+        <div className="no-print"><Notice tone="warn" icon="Hourglass"><p className="font-semibold">Payment verified. You are registered.</p><p className="mt-0.5">Your confirmation email has not been sent yet. Try your verification code again later, or contact TechStuff for the class group link.</p></Notice></div>
+      )}
+
+      <article className="print-area overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-hero-bg px-5 py-4 text-hero-fg sm:px-8">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-solid text-white"><Icon name="Terminal" size={16} /></span>
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wide">TECHSTUFF</p>
+              <p className="text-xs text-hero-mute">OS Installation Masterclass</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-hero-line bg-hero-chip px-3 py-1 text-xs font-medium">
+            <Icon name="Ticket" size={13} className="text-hero-accent" />Registration Pass
+          </span>
+        </div>
+
+        <div className="p-5 sm:p-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Registration ID</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-3">
+            <span className="break-all font-mono text-3xl font-semibold tracking-wider text-brand sm:text-4xl">{pass.regId}</span>
+            <button type="button" onClick={copyId} className="no-print inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Icon name={copied ? "Check" : "Copy"} size={14} />{copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+
+          <dl className="mt-7 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            <PassItem label="Participant">{pass.name}</PassItem>
+            <PassItem label="Email">{pass.email}</PassItem>
+            <PassItem label="WhatsApp">{pass.phone}</PassItem>
+            {pass.org ? <PassItem label="Department / Organization">{pass.org}</PassItem> : null}
+            <PassItem label="Class schedule">{pass.session}</PassItem>
+            <PassItem label="Skill level">{pass.skill}</PassItem>
+            <PassItem label="Hardware">{hasLaptop ? "Own laptop: " + pass.model + (pass.os ? " (" + pass.os + ")" : "") : "Shared lab workstation (first-come, first-served)"}</PassItem>
+            <PassItem label="Payment">Orange Money <span className="ml-1 rounded-full bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok">Verified</span></PassItem>
+            <div className="sm:col-span-2">
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Target OS tracks</dt>
+              <dd className="mt-2 flex flex-wrap gap-2">
+                {pass.tracks.map((t) => (
+                  <span key={t} className="rounded-full bg-soft px-3 py-1 text-[13px] font-medium text-brand">{t}</span>
+                ))}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="cut"></div>
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-surface2 px-5 py-4 text-xs text-mute sm:px-8">
+          <span>Confirmed {pass.issued}</span>
+          <span>Show this pass, printed or on your phone, at check-in.</span>
+        </div>
+      </article>
+
+      <div className="no-print flex flex-col gap-3 sm:flex-row">
+        <button type="button" onClick={doPrint} className={btnPrimary + " flex-1"}>
+          <Icon name="Printer" size={18} />Print / Save Pass
+        </button>
+        <button type="button" onClick={onReset} className={btnGhost + " flex-1"}>
+          <Icon name="RotateCcw" size={18} />Register Another Student
+        </button>
+      </div>
+      <p className="no-print text-center text-xs text-mute">To save a PDF, choose Save as PDF in the print dialog. If it does not open, use Ctrl/Cmd + P in your browser.</p>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [view, setView] = useState("form"); /* form | pending | unlock | pass */
+  const [v, setV] = useState(INITIAL);
+  const [receipt, setReceipt] = useState(null); /* { file, url } */
+  const [receiptError, setReceiptError] = useState("");
+  const [additionalImage, setAdditionalImage] = useState(null); /* optional { file, url } */
+  const [additionalImageError, setAdditionalImageError] = useState("");
+  const [touched, setTouched] = useState({});
+  const [attempted, setAttempted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [pending, setPending] = useState(null);
+  const [pass, setPass] = useState(null);
+  const [meta, setMeta] = useState({});
+  const [serverStatus, setServerStatus] = useState(null);
+  const mainRef = useRef(null);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    try { mainRef.current && mainRef.current.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+  }, [view]);
+
+  useEffect(() => {
+    if (IS_PREVIEW || !GOOGLE_SCRIPT_URL) return;
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    fetch(GOOGLE_SCRIPT_URL, { redirect: "follow", signal: ctrl.signal })
+      .then((r) => r.text())
+      .then((text) => {
+        try {
+          const info = JSON.parse(text);
+          if (!cancelled && info && info.registration) setServerStatus(info.registration);
+        } catch (e) { /* health response is optional; the server still enforces limits */ }
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(timer));
+    return () => { cancelled = true; clearTimeout(timer); ctrl.abort(); };
+  }, []);
+
+  const errors = validate(v, receipt, receiptError, additionalImageError);
+  const errorCount = Object.keys(errors).length;
+  const closedByCapacity = !!serverStatus && serverStatus.capacityReached === true;
+  const closedByDeadline = !!serverStatus && serverStatus.deadlinePassed === true;
+  const closedMessage = closedByCapacity
+    ? "All " + CONFIG.maxParticipants + " confirmed places are filled. Registration is closed. Contact " + CONFIG.supportContact + " for the waitlist."
+    : closedByDeadline
+      ? "Registration closed on " + CONFIG.deadlineLabel + ". Contact " + CONFIG.supportContact + " if you already paid."
+      : "";
+  const shown = (k) => ((touched[k] || attempted) ? errors[k] : undefined);
+  const isValid = (k) => touched[k] && !errors[k];
+  const set = (k, val) => setV((p) => Object.assign({}, p, { [k]: val }));
+  const touch = (k) => setTouched((p) => Object.assign({}, p, { [k]: true }));
+  const pick = (k) => (e) => { set(k, e.target.value); touch(k); };
+  const toggleTrack = (id) => {
+    setV((p) => Object.assign({}, p, { tracks: p.tracks.indexOf(id) >= 0 ? p.tracks.filter((t) => t !== id) : p.tracks.concat([id]) }));
+    touch("tracks");
+  };
+
+  const clearReceipt = () => { if (receipt) { try { URL.revokeObjectURL(receipt.url); } catch (e) {} } setReceipt(null); };
+  const clearAdditionalImage = () => { if (additionalImage) { try { URL.revokeObjectURL(additionalImage.url); } catch (e) {} } setAdditionalImage(null); };
+  const chooseReceipt = (file) => {
+    touch("receipt");
+    const err = imageFileError(file);
+    if (err) { setReceiptError(err); return; }
+    setReceiptError("");
+    clearReceipt();
+    setReceipt({ file: file, url: URL.createObjectURL(file) });
+  };
+  const chooseAdditionalImage = (file) => {
+    touch("additionalImage");
+    const err = imageFileError(file);
+    if (err) { setAdditionalImageError(err); return; }
+    setAdditionalImageError("");
+    clearAdditionalImage();
+    setAdditionalImage({ file: file, url: URL.createObjectURL(file) });
+  };
+
+  const reset = () => {
+    clearReceipt(); clearAdditionalImage();
+    setV(INITIAL); setReceiptError(""); setAdditionalImageError(""); setTouched({}); setAttempted(false); setSubmitError("");
+    setPending(null); setPass(null); setMeta({}); setView("form");
+  };
+
+  const goVerified = (res) => {
+    const r = res.registration;
+    setPass({
+      regId: r.regId, name: r.name, email: r.email, phone: r.phone, org: r.org || "",
+      laptop: r.laptop, model: r.model || "", os: r.os || "", skill: r.skill,
+      tracks: Array.isArray(r.tracks) ? r.tracks : String(r.tracks || "").split(",").map((s) => s.trim()).filter(Boolean),
+      session: r.session,
+      issued: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+    });
+    setMeta({
+      emailSent: !!res.emailSent,
+      alreadyVerified: !!res.alreadyVerified,
+      emailStatus: res.emailStatus || (res.emailSent ? "sent" : "pending")
+    });
+    setView("pass");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    if (!IS_PREVIEW && !LIVE_CONFIG_READY) {
+      setSubmitError("Registration is paused until " + FRONTEND_CONFIG_PROBLEMS.join(" and ") + " are configured.");
+      return;
+    }
+    if (closedMessage) { setSubmitError(closedMessage); return; }
+    setAttempted(true);
+    if (errorCount > 0) {
+      const first = FIELD_ORDER.find((k) => errors[k]);
+      const el = document.getElementById(first) || document.getElementById(first + "-group");
+      if (el) { try { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (err) {} }
+      return;
+    }
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      const img = await prepareReceipt(receipt.file, "receipt");
+      const extraImg = additionalImage ? await prepareReceipt(additionalImage.file, "additional_image") : null;
+      const payload = {
+        action: "submit_pending",
+        name: v.name.trim(), email: v.email.trim(),
+        phone: v.phone.replace(/\s+/g, " ").trim(), org: v.org.trim(),
+        laptop: v.laptop === "yes" ? "Yes" : "No",
+        laptopModel: v.laptop === "yes" ? v.model.trim() : "",
+        currentOS: v.laptop === "yes" ? v.os.trim() : "",
+        skill: v.skill, tracks: v.tracks, session: v.session,
+        payment: "Orange Money",
+        receipt: img,
+        additionalImage: extraImg,
+        website: v.website,
+      };
+      const info = {
+        name: payload.name, email: payload.email, phone: payload.phone, org: payload.org,
+        laptop: v.laptop, model: payload.laptopModel, os: payload.currentOS,
+        skill: v.skill, tracks: v.tracks, session: v.session,
+        receiptUrl: receipt.url, additionalImageUrl: additionalImage ? additionalImage.url : "", notice: "",
+      };
+      const res = await callScript(payload, 90000);
+      if (res && res.status === "ok") { setPending(info); setView("pending"); }
+      else if (res && res.code === "ALREADY_PENDING") {
+        info.notice = "We already have a payment from this email under review, so we did not create a second one.";
+        setPending(info); setView("pending");
+      } else if (res && res.code === "ALREADY_VERIFIED") {
+        setSubmitError("This email is already registered and verified. Use \"Enter verification code\" at the top of the page to open your pass.");
+      } else if (res && res.code === "CONFIG_INCOMPLETE") {
+        setSubmitError("Registration is not configured yet. Please contact the organizer.");
+      } else if (res && res.code === "CAPACITY_REACHED") {
+        setSubmitError("All " + CONFIG.maxParticipants + " confirmed places are filled. Contact " + CONFIG.supportContact + " for the waitlist.");
+        setServerStatus((s) => Object.assign({}, s || {}, { capacityReached: true }));
+      } else if (res && res.code === "REGISTRATION_CLOSED") {
+        setSubmitError("Registration closed on " + CONFIG.deadlineLabel + ". Contact " + CONFIG.supportContact + " if you already paid.");
+        setServerStatus((s) => Object.assign({}, s || {}, { deadlinePassed: true }));
+      } else {
+        setSubmitError((res && res.message) || "Something went wrong while saving your registration. Please try again.");
+      }
+    } catch (err) {
+      setSubmitError(netMessage(err) + " Your details and images are still filled in.");
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div>
+      <Hero />
+      <main ref={mainRef} className="gutter mx-auto w-full max-w-3xl scroll-mt-4 pb-16 pt-8 sm:pt-10">
+        {view === "pass" && pass ? (
+          <Pass pass={pass} meta={meta} onReset={reset} />
+        ) : view === "pending" && pending ? (
+          <PendingView info={pending} onVerified={goVerified} />
+        ) : view === "unlock" ? (
+          <UnlockView onVerified={goVerified} onBack={() => setView("form")} />
+        ) : (
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            {!IS_PREVIEW && !LIVE_CONFIG_READY ? (
+              <Notice tone="bad" icon="TriangleAlert">
+                <p className="font-semibold">Registration is not configured yet.</p>
+                <p className="mt-0.5">Complete {FRONTEND_CONFIG_PROBLEMS.join(" and ")} in this page before accepting payments. No submissions are being sent.</p>
+              </Notice>
+            ) : null}
+            {closedMessage ? (
+              <Notice tone="bad" icon="CircleAlert">
+                <p className="font-semibold">{closedByCapacity ? "Capacity reached" : "Registration closed"}</p>
+                <p className="mt-0.5">{closedMessage}</p>
+                {serverStatus && typeof serverStatus.confirmed === "number"
+                  ? <p className="mt-0.5">{serverStatus.confirmed} of {CONFIG.maxParticipants} confirmed places filled.</p>
+                  : null}
+              </Notice>
+            ) : null}
+            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="flex items-start gap-2.5 text-sm text-ink"><Icon name="KeyRound" size={18} className="mt-0.5 text-brand" />Already paid and received your Unique Verification Code?</p>
+              <button type="button" onClick={() => setView("unlock")} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                Enter verification code<Icon name="ArrowRight" size={15} />
+              </button>
+            </div>
+
+            <div className="hp" aria-hidden="true">
+              <label htmlFor="website">Leave this field empty</label>
+              <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={v.website} onChange={(e) => set("website", e.target.value)} />
+            </div>
+
+            <Section step="1" title="Participant details" subtitle="Your class updates and verification code are sent to these contacts.">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Field id="name" label="Full name" required error={shown("name")}>
+                    <TextInput id="name" value={v.name} onChange={(e) => set("name", e.target.value)} onBlur={() => touch("name")}
+                      error={shown("name")} valid={isValid("name")} autoComplete="name" placeholder="e.g. Aminata Kamara" />
+                  </Field>
+                </div>
+                <Field id="email" label="Email address" required error={shown("email")} hint="We email your confirmation here once payment is verified.">
+                  <TextInput id="email" type="email" value={v.email} onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
+                    error={shown("email")} valid={isValid("email")} autoComplete="email" inputMode="email" placeholder="you@example.com" />
+                </Field>
+                <Field id="phone" label="WhatsApp number" required error={shown("phone")} hint="Your verification code is sent here.">
+                  <TextInput id="phone" type="tel" value={v.phone} onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
+                    error={shown("phone")} valid={isValid("phone")} autoComplete="tel" inputMode="tel" placeholder="+232 76 123456" />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field id="org" label="Department / Organization" optional>
+                    <TextInput id="org" value={v.org} onChange={(e) => set("org", e.target.value)} autoComplete="organization" placeholder="e.g. Computer Science, UNIMTECH" />
+                  </Field>
+                </div>
+              </div>
+            </Section>
+
+            <Section step="2" title="Hardware and readiness" subtitle="This is a hands-on class, so we plan machines around your answer.">
+              <Group id="laptop" legend="Will you bring your own laptop?" required error={shown("laptop")}>
+                <div className="grid max-w-md grid-cols-2 gap-2 rounded-xl bg-surface2 p-1.5" role="radiogroup">
+                  {[["yes", "Yes", "Laptop"], ["no", "No", "Monitor"]].map((o) => (
+                    <label key={o[0]} className="relative block cursor-pointer">
+                      <input type="radio" name="laptop" value={o[0]} checked={v.laptop === o[0]} onChange={pick("laptop")} className="peer sr-only" />
+                      <span className={"flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand " +
+                        (v.laptop === o[0] ? "bg-solid text-white shadow-sm" : "text-mute hover:text-ink")}>
+                        <Icon name={o[2]} size={17} />{o[1]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </Group>
+
+              <Collapse open={v.laptop === "yes"}>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field id="model" label="Laptop brand / model" required error={shown("model")} hint="For example HP ProBook 450, Dell Latitude, MacBook Air.">
+                    <TextInput id="model" value={v.model} onChange={(e) => set("model", e.target.value)} onBlur={() => touch("model")}
+                      error={shown("model")} valid={isValid("model")} placeholder="e.g. HP ProBook 450 G8" />
+                  </Field>
+                  <Field id="os" label="Current operating system" required error={shown("os")} hint="Pick a suggestion or type your own.">
+                    <TextInput id="os" list="os-options" value={v.os} onChange={(e) => set("os", e.target.value)} onBlur={() => touch("os")}
+                      error={shown("os")} valid={isValid("os")} placeholder="e.g. Windows 10" />
+                    <datalist id="os-options">{OS_SUGGESTIONS.map((o) => <option key={o} value={o} />)}</datalist>
+                  </Field>
+                </div>
+              </Collapse>
+
+              <Collapse open={v.laptop === "no"}>
+                <div className="flex items-start gap-3 rounded-xl border border-line bg-soft p-4 text-sm text-ink">
+                  <Icon name="Info" size={18} className="mt-0.5 text-brand" />
+                  <p className="min-w-0">Shared lab workstations are limited and assigned first-come, first-served. Registering early gives you the best chance of getting one.</p>
+                </div>
+              </Collapse>
+            </Section>
+
+            <Section step="3" title="Course track and experience" subtitle="Tell us where you are starting from and what you want to practise.">
+              <Group id="skill" legend="Skill level" required error={shown("skill")}>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {SKILLS.map((s) => (
+                    <OptionCard key={s.id} type="radio" name="skill" value={s.id} checked={v.skill === s.id} onChange={pick("skill")} icon={s.icon} title={s.id} desc={s.desc} />
+                  ))}
+                </div>
+              </Group>
+              <Group id="tracks" legend="Target OS tracks" required hint="Select all that apply." error={shown("tracks")}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {TRACKS.map((t) => (
+                    <OptionCard key={t.id} type="checkbox" name="tracks" value={t.id} checked={v.tracks.indexOf(t.id) >= 0} onChange={() => toggleTrack(t.id)} icon={t.icon} title={t.id} desc={t.desc} />
+                  ))}
+                </div>
+              </Group>
+            </Section>
+
+            <Section step="4" title={CONFIG.durationWeeks + "-Week class schedule"} subtitle={CONFIG.classDays + ". Exact session times will be confirmed by TechStuff."}>
+              <Curriculum />
+              <Group id="session" legend="Class schedule" required error={shown("session")}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {COHORTS.map((s) => (
+                    <OptionCard key={s.id} type="radio" name="session" value={s.id} checked={v.session === s.id} onChange={pick("session")} icon={s.icon} title={s.id} desc={s.desc} />
+                  ))}
+                </div>
+              </Group>
+            </Section>
+
+            <Section step="5" title="Payment by Orange Money" subtitle="Orange Money is the only payment method. Your seat is held after we verify your receipt.">
+              <OrangeMoneyPanel />
+              <Group id="receipt" legend="Orange Money payment screenshot" required error={null}>
+                <Dropzone id="receipt" receipt={receipt} error={shown("receipt")} onFile={chooseReceipt}
+                  onRemove={() => { clearReceipt(); setReceiptError(""); touch("receipt"); }} />
+              </Group>
+              <Group id="additionalImage" legend="Additional image" hint="Optional" error={null}>
+                <Dropzone id="additionalImage" title="Drop a second image here, or click to choose"
+                  alt="Preview of your additional image" hint="This image is stored with your registration for review."
+                  receipt={additionalImage} error={shown("additionalImage")} onFile={chooseAdditionalImage}
+                  onRemove={() => { clearAdditionalImage(); setAdditionalImageError(""); touch("additionalImage"); }} />
+              </Group>
+            </Section>
+
+            <div className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+              {submitError ? <div className="mb-4"><Notice tone="bad" icon="CircleAlert">{submitError}</Notice></div> : null}
+              {attempted && errorCount > 0 ? (
+                <p role="status" className="mb-4 flex items-center gap-2 text-sm font-medium text-bad">
+                  <Icon name="CircleAlert" size={16} />{errorCount} {errorCount === 1 ? "field needs" : "fields need"} your attention before you can submit.
+                </p>
+              ) : null}
+              <button type="submit" disabled={submitting} className={btnPrimary}>
+                {submitting
+                  ? (<><Icon name="LoaderCircle" size={18} className="animate-spin" />Submitting...</>)
+                  : (<>Submit Payment for Verification<Icon name="ArrowRight" size={18} /></>)}
+              </button>
+              {submitting ? <p role="status" className="mt-3 text-center text-xs text-mute">Uploading your images. Please keep this page open.</p> : null}
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-mute">
+                <Icon name="ShieldCheck" size={14} />Your details and images are used only to manage this class.
+              </p>
+            </div>
+          </form>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
