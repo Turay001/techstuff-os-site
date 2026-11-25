@@ -197,7 +197,7 @@ function imageFileError(file) {
   return "";
 }
 
-function validate(v, receipt, receiptError, additionalImageError) {
+function validate(v, receipt, receiptError, additionalImageError, passportPhoto, passportPhotoError) {
   const e = {};
   if (v.name.trim().length < 3) e.name = "Enter your full name.";
   if (!EMAIL_RE.test(v.email.trim())) e.email = "Enter a valid email address. Your confirmation is sent here.";
@@ -215,9 +215,11 @@ function validate(v, receipt, receiptError, additionalImageError) {
   if (receiptError) e.receipt = receiptError;
   else if (!receipt) e.receipt = "Upload your Orange Money payment screenshot.";
   if (additionalImageError) e.additionalImage = additionalImageError;
+  if (passportPhotoError) e.passportPhoto = passportPhotoError;
+  else if (!passportPhoto) e.passportPhoto = "Upload your passport photo. It is required for your certificate.";
   return e;
 }
-const FIELD_ORDER = ["name", "email", "phone", "laptop", "model", "os", "skill", "tracks", "session", "receipt", "additionalImage"];
+const FIELD_ORDER = ["name", "email", "phone", "laptop", "model", "os", "skill", "tracks", "session", "receipt", "additionalImage", "passportPhoto"];
 
 /* ---------- Backend calls ---------- */
 let MOCK = null; /* preview mode only */
@@ -772,6 +774,16 @@ function Pass({ pass, meta, onReset }) {
             </button>
           </div>
 
+          {pass.photoUrl ? (
+            <div className="mt-6 flex items-center gap-4">
+              <img src={pass.photoUrl} alt="Student passport photo" className="h-28 w-24 rounded-lg border border-line object-cover" />
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Passport photo</p>
+                <p className="mt-1 max-w-xs text-xs text-mute">Attached to your record for certificate processing after the class.</p>
+              </div>
+            </div>
+          ) : null}
+
           <dl className="mt-7 grid gap-x-8 gap-y-5 sm:grid-cols-2">
             <PassItem label="Participant">{pass.name}</PassItem>
             <PassItem label="Email">{pass.email}</PassItem>
@@ -820,6 +832,8 @@ function App() {
   const [receiptError, setReceiptError] = useState("");
   const [additionalImage, setAdditionalImage] = useState(null); /* optional { file, url } */
   const [additionalImageError, setAdditionalImageError] = useState("");
+  const [passportPhoto, setPassportPhoto] = useState(null); /* required { file, url } */
+  const [passportPhotoError, setPassportPhotoError] = useState("");
   const [touched, setTouched] = useState({});
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -854,7 +868,7 @@ function App() {
     return () => { cancelled = true; clearTimeout(timer); ctrl.abort(); };
   }, []);
 
-  const errors = validate(v, receipt, receiptError, additionalImageError);
+  const errors = validate(v, receipt, receiptError, additionalImageError, passportPhoto, passportPhotoError);
   const errorCount = Object.keys(errors).length;
   const closedByCapacity = !!serverStatus && serverStatus.capacityReached === true;
   const closedByDeadline = !!serverStatus && serverStatus.deadlinePassed === true;
@@ -875,6 +889,7 @@ function App() {
 
   const clearReceipt = () => { if (receipt) { try { URL.revokeObjectURL(receipt.url); } catch (e) {} } setReceipt(null); };
   const clearAdditionalImage = () => { if (additionalImage) { try { URL.revokeObjectURL(additionalImage.url); } catch (e) {} } setAdditionalImage(null); };
+  const clearPassportPhoto = () => { if (passportPhoto) { try { URL.revokeObjectURL(passportPhoto.url); } catch (e) {} } setPassportPhoto(null); };
   const chooseReceipt = (file) => {
     touch("receipt");
     const err = imageFileError(file);
@@ -891,10 +906,18 @@ function App() {
     clearAdditionalImage();
     setAdditionalImage({ file: file, url: URL.createObjectURL(file) });
   };
+  const choosePassportPhoto = (file) => {
+    touch("passportPhoto");
+    const err = imageFileError(file);
+    if (err) { setPassportPhotoError(err); return; }
+    setPassportPhotoError("");
+    clearPassportPhoto();
+    setPassportPhoto({ file: file, url: URL.createObjectURL(file) });
+  };
 
   const reset = () => {
-    clearReceipt(); clearAdditionalImage();
-    setV(INITIAL); setReceiptError(""); setAdditionalImageError(""); setTouched({}); setAttempted(false); setSubmitError("");
+    clearReceipt(); clearAdditionalImage(); clearPassportPhoto();
+    setV(INITIAL); setReceiptError(""); setAdditionalImageError(""); setPassportPhotoError(""); setTouched({}); setAttempted(false); setSubmitError("");
     setPending(null); setPass(null); setMeta({}); setView("form");
   };
 
@@ -905,6 +928,8 @@ function App() {
       laptop: r.laptop, model: r.model || "", os: r.os || "", skill: r.skill,
       tracks: Array.isArray(r.tracks) ? r.tracks : String(r.tracks || "").split(",").map((s) => s.trim()).filter(Boolean),
       session: r.session,
+      /* The private Drive link needs Google auth and cannot render in an <img>; use the local preview only. */
+      photoUrl: passportPhoto ? passportPhoto.url : "",
       issued: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
     });
     setMeta({
@@ -935,6 +960,7 @@ function App() {
     try {
       const img = await prepareReceipt(receipt.file, "receipt");
       const extraImg = additionalImage ? await prepareReceipt(additionalImage.file, "additional_image") : null;
+      const passportImg = await prepareReceipt(passportPhoto.file, "passport_photo");
       const payload = {
         action: "submit_pending",
         name: v.name.trim(), email: v.email.trim(),
@@ -946,6 +972,7 @@ function App() {
         payment: "Orange Money",
         receipt: img,
         additionalImage: extraImg,
+        passportPhoto: passportImg,
         website: v.website,
       };
       const info = {
@@ -1116,6 +1143,15 @@ function App() {
                   alt="Preview of your additional image" hint="This image is stored with your registration for review."
                   receipt={additionalImage} error={shown("additionalImage")} onFile={chooseAdditionalImage}
                   onRemove={() => { clearAdditionalImage(); setAdditionalImageError(""); touch("additionalImage"); }} />
+              </Group>
+            </Section>
+
+            <Section step="6" title="Passport photo" subtitle="Required. Your photo appears on your pass and is kept privately to process your certificate after you complete the class.">
+              <Group id="passportPhoto" legend="Passport photo" required error={null}>
+                <Dropzone id="passportPhoto" title="Drop your passport photo here, or click to choose"
+                  alt="Preview of your passport photo" hint="Use a clear head-and-shoulders photo in .jpg, .png or .webp format (max 5 MB). It is stored privately and shown on your pass."
+                  receipt={passportPhoto} error={shown("passportPhoto")} onFile={choosePassportPhoto}
+                  onRemove={() => { clearPassportPhoto(); setPassportPhotoError(""); touch("passportPhoto"); }} />
               </Group>
             </Section>
 
