@@ -120,11 +120,12 @@
     .print-area, .print-area * { visibility: visible !important; }
     .no-print { display: none !important; }
     .print-area {
-      position: static !important;
-      left: auto !important; top: auto !important;
+      position: absolute !important;
+      left: 0 !important; top: 0 !important;
       width: 194mm !important;
       max-width: none !important;
-      margin: 0 auto !important;
+      margin: 0 !important;
+      transform: none !important;
       border: 0 !important;
       border-radius: 0 !important;
       box-shadow: none !important;
@@ -155,7 +156,7 @@
       background: #ffffff !important;
       break-inside: avoid !important;
     }
-    .qr-card canvas { width: 34mm !important; max-width: none !important; height: auto !important; background: #ffffff !important; }
+    .qr-card canvas { width: 34mm !important; height: 34mm !important; max-width: none !important; transform: none !important; background: #ffffff !important; }
     .qr-id { font-size: 9px !important; margin-top: 1px !important; }
     .pass-photo { margin-top: 6px !important; }
     .pass-photo img { height: 22mm !important; width: 18mm !important; }
