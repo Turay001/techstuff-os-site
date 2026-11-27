@@ -84,9 +84,10 @@
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   input, select, textarea, button { font-family: inherit; }
   /* QR codes always render dark-on-white, even in the dark theme. */
-  .qr-card { background: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px; }
+  .qr-card { background: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 14px; padding: 10px; }
   .qr-card canvas { display: block; background: #ffffff !important; image-rendering: pixelated; }
   .qr-id { color: #1d4ed8 !important; }
+  .pass-side .qr-card { margin-top: 0 !important; }
 
   /* Horizontal registration carousel: one primary section at a time. */
   .carousel { scroll-margin-top: 1rem; }
@@ -106,6 +107,7 @@
     .animate-spin { animation: none; }
     .carousel-step, .carousel-step[data-direction="back"] { animation: none; }
   }
+  @page { size: A4 portrait; margin: 8mm; }
   @media print {
     :root:root:root {
       --bg: #ffffff; --surface: #ffffff; --surface2: #f3f6fb; --line: #cbd5e1;
@@ -113,12 +115,53 @@
       --ok: #0f7b4a; --ok-bg: #e4f6ec; color-scheme: light;
     }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { margin: 0 !important; padding: 0 !important; }
     body * { visibility: hidden !important; }
     .print-area, .print-area * { visibility: visible !important; }
-    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none !important; }
-    .qr-card { border: 1px solid #94a3b8 !important; background: #ffffff !important; break-inside: avoid; }
-    .qr-card canvas { background: #ffffff !important; }
+    .print-area {
+      position: static !important;
+      left: auto !important; top: auto !important;
+      width: 194mm !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+    .pass-header { padding: 7px 10px !important; }
+    .pass-body { padding: 9px 12px !important; }
+    .pass-id { font-size: 22px !important; margin-top: 1px !important; }
+    .pass-layout {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 44mm !important;
+      gap: 6mm !important;
+      margin-top: 7px !important;
+    }
+    .pass-main { order: 1 !important; min-width: 0 !important; }
+    .pass-side { order: 2 !important; min-width: 0 !important; }
+    .pass-details { gap: 5px 10px !important; margin-top: 0 !important; }
+    .pass-details dt { font-size: 8px !important; }
+    .pass-details dd { font-size: 11px !important; margin-top: 1px !important; }
+    .pass-details .pass-chip { font-size: 9px !important; padding: 1px 6px !important; }
+    .qr-card {
+      width: 40mm !important;
+      max-width: none !important;
+      padding: 2mm !important;
+      border: 1px solid #94a3b8 !important;
+      border-radius: 5px !important;
+      background: #ffffff !important;
+      break-inside: avoid !important;
+    }
+    .qr-card canvas { width: 34mm !important; max-width: none !important; height: auto !important; background: #ffffff !important; }
+    .qr-id { font-size: 9px !important; margin-top: 1px !important; }
+    .pass-photo { margin-top: 6px !important; }
+    .pass-photo img { height: 22mm !important; width: 18mm !important; }
+    .pass-photo p { font-size: 8px !important; }
+    .pass-footer { padding: 6px 10px !important; }
+    .cut { margin: 4px 0 !important; }
   }
 </style>
 </head>
@@ -875,9 +918,9 @@ function CheckinQR({ url, regId }) {
   };
 
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-center">
-      <div className="qr-card w-full max-w-[260px] text-center">
-        <canvas ref={canvasRef} className="mx-auto h-auto w-full max-w-[220px]" role="img"
+    <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-center">
+      <div className="qr-card w-full max-w-[190px] text-center">
+        <canvas ref={canvasRef} className="mx-auto h-auto w-full max-w-[168px]" role="img"
           aria-label={"Check-in QR for registration " + (regId || "")} />
         <p className="qr-id mt-2 break-all font-mono text-sm font-semibold tracking-wide">{regId}</p>
         {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
@@ -936,7 +979,7 @@ function Pass({ pass, meta, onReset }) {
       )}
 
       <article className="print-area overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-hero-bg px-5 py-4 text-hero-fg sm:px-8">
+        <div className="pass-header flex flex-wrap items-center justify-between gap-3 bg-hero-bg px-5 py-4 text-hero-fg sm:px-8">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-solid text-white"><Icon name="Terminal" size={16} /></span>
             <div>
@@ -949,49 +992,51 @@ function Pass({ pass, meta, onReset }) {
           </span>
         </div>
 
-        <div className="p-5 sm:p-8">
+        <div className="pass-body p-5 sm:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Registration ID</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-3">
-            <span className="break-all font-mono text-3xl font-semibold tracking-wider text-brand sm:text-4xl">{pass.regId}</span>
+            <span className="pass-id break-all font-mono text-3xl font-semibold tracking-wider text-brand sm:text-4xl">{pass.regId}</span>
             <button type="button" onClick={copyId} className="no-print inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
               <Icon name={copied ? "Check" : "Copy"} size={14} />{copied ? "Copied" : "Copy"}
             </button>
           </div>
 
-          <CheckinQR url={pass.checkinUrl || ""} regId={pass.regId} />
-
-          {pass.photoUrl ? (
-            <div className="mt-6 flex items-center gap-4">
-              <img src={pass.photoUrl} alt="Student passport photo" className="h-28 w-24 rounded-lg border border-line object-cover" />
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Passport photo</p>
-                <p className="mt-1 max-w-xs text-xs text-mute">Attached to your record for certificate processing after the class.</p>
+          <div className="pass-layout mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-[minmax(0,1fr)_190px]">
+            <dl className="pass-main pass-details order-2 m-0 grid gap-x-6 gap-y-4 sm:order-1 sm:grid-cols-2">
+              <PassItem label="Participant">{pass.name}</PassItem>
+              <PassItem label="Email">{pass.email}</PassItem>
+              <PassItem label="WhatsApp">{pass.phone}</PassItem>
+              {pass.org ? <PassItem label="Department / Organization">{pass.org}</PassItem> : null}
+              <PassItem label="Class schedule">{pass.session}</PassItem>
+              <PassItem label="Skill level">{pass.skill}</PassItem>
+              <PassItem label="Hardware">{hasLaptop ? "Own laptop: " + pass.model + (pass.os ? " (" + pass.os + ")" : "") : "Shared lab workstation (first-come, first-served)"}</PassItem>
+              <PassItem label="Payment">Orange Money <span className="pass-chip ml-1 rounded-full bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok">Verified</span></PassItem>
+              <div className="sm:col-span-2">
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Target OS tracks</dt>
+                <dd className="mt-2 flex flex-wrap gap-2">
+                  {pass.tracks.map((t) => (
+                    <span key={t} className="pass-chip rounded-full bg-soft px-3 py-1 text-[13px] font-medium text-brand">{t}</span>
+                  ))}
+                </dd>
               </div>
+            </dl>
+            <div className="pass-side order-1 sm:order-2">
+              <CheckinQR url={pass.checkinUrl || ""} regId={pass.regId} />
+              {pass.photoUrl ? (
+                <div className="pass-photo mt-4 flex items-center gap-3">
+                  <img src={pass.photoUrl} alt="Student passport photo" className="h-24 w-20 rounded-lg border border-line object-cover" />
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Passport photo</p>
+                    <p className="mt-1 text-xs text-mute">Attached for certificate processing.</p>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-
-          <dl className="mt-7 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-            <PassItem label="Participant">{pass.name}</PassItem>
-            <PassItem label="Email">{pass.email}</PassItem>
-            <PassItem label="WhatsApp">{pass.phone}</PassItem>
-            {pass.org ? <PassItem label="Department / Organization">{pass.org}</PassItem> : null}
-            <PassItem label="Class schedule">{pass.session}</PassItem>
-            <PassItem label="Skill level">{pass.skill}</PassItem>
-            <PassItem label="Hardware">{hasLaptop ? "Own laptop: " + pass.model + (pass.os ? " (" + pass.os + ")" : "") : "Shared lab workstation (first-come, first-served)"}</PassItem>
-            <PassItem label="Payment">Orange Money <span className="ml-1 rounded-full bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok">Verified</span></PassItem>
-            <div className="sm:col-span-2">
-              <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Target OS tracks</dt>
-              <dd className="mt-2 flex flex-wrap gap-2">
-                {pass.tracks.map((t) => (
-                  <span key={t} className="rounded-full bg-soft px-3 py-1 text-[13px] font-medium text-brand">{t}</span>
-                ))}
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
 
         <div className="cut"></div>
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-surface2 px-5 py-4 text-xs text-mute sm:px-8">
+        <div className="pass-footer flex flex-wrap items-center justify-between gap-2 bg-surface2 px-5 py-4 text-xs text-mute sm:px-8">
           <span>Confirmed {pass.issued}</span>
           <span>Show this pass, printed or on your phone, at check-in.</span>
         </div>
