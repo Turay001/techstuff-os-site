@@ -83,9 +83,28 @@
   .cut::before { left: -11px; } .cut::after { right: -11px; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   input, select, textarea, button { font-family: inherit; }
+  /* QR codes always render dark-on-white, even in the dark theme. */
+  .qr-card { background: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px; }
+  .qr-card canvas { display: block; background: #ffffff !important; image-rendering: pixelated; }
+  .qr-id { color: #1d4ed8 !important; }
+
+  /* Horizontal registration carousel: one primary section at a time. */
+  .carousel { scroll-margin-top: 1rem; }
+  .carousel-viewport { overflow: hidden; }
+  .carousel-step { animation: carousel-in-forward .3s cubic-bezier(.2, .8, .2, 1) both; }
+  .carousel-step[data-direction="back"] { animation-name: carousel-in-back; }
+  @keyframes carousel-in-forward {
+    from { opacity: 0; transform: translate3d(28px, 0, 0); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes carousel-in-back {
+    from { opacity: 0; transform: translate3d(-28px, 0, 0); }
+    to { opacity: 1; transform: none; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .collapse-grid, .fade-in { transition: none; animation: none; }
     .animate-spin { animation: none; }
+    .carousel-step, .carousel-step[data-direction="back"] { animation: none; }
   }
   @media print {
     :root:root:root {
@@ -98,6 +117,8 @@
     .print-area, .print-area * { visibility: visible !important; }
     .print-area { position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none !important; }
+    .qr-card { border: 1px solid #94a3b8 !important; background: #ffffff !important; break-inside: avoid; }
+    .qr-card canvas { background: #ffffff !important; }
   }
 </style>
 </head>
@@ -108,6 +129,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<!-- Pinned QR encoder: generated locally; only the signed URL is encoded. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
 
 <script type="text/babel" data-presets="react">
@@ -124,7 +147,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDMkOOztbTjt
 /* Official production configuration. Keep idYear, WEEKS and the lists below
    in sync with CONFIG / ALLOWED in Code.gs. Exact session times were not supplied. */
 const CONFIG = {
-  idYear: "TS2026",                       // registration IDs are TS2026-XXXX
+  idYear: "TS-OS-2026",                   // registration IDs are TS-OS-2026-XXXX (legacy TS2026 scans still work)
   classTitle: "TechStuff OS Installation MasterClass",
   deadline: "2026-12-15",
   deadlineLabel: "15 December 2026",
@@ -144,7 +167,7 @@ const IS_PREVIEW = !GOOGLE_SCRIPT_URL || /PASTE_YOUR/i.test(GOOGLE_SCRIPT_URL);
 const FRONTEND_CONFIG_PROBLEMS = [];
 if (/XXX/i.test(CONFIG.fee)) FRONTEND_CONFIG_PROBLEMS.push("the course fee");
 if (/\bXX\b|XXX/i.test(CONFIG.orangeMoney.number)) FRONTEND_CONFIG_PROBLEMS.push("the Orange Money number");
-if (CONFIG.idYear !== "TS2026") FRONTEND_CONFIG_PROBLEMS.push("the registration ID year");
+if (CONFIG.idYear !== "TS-OS-2026") FRONTEND_CONFIG_PROBLEMS.push("the registration ID year");
 if (!(CONFIG.maxParticipants > 0)) FRONTEND_CONFIG_PROBLEMS.push("the participant limit");
 const LIVE_CONFIG_READY = FRONTEND_CONFIG_PROBLEMS.length === 0;
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -172,6 +195,29 @@ const COHORTS = [
 ];
 const OS_SUGGESTIONS = ["Windows 11", "Windows 10", "Windows 7", "Ubuntu / Linux", "macOS", "No OS installed", "Not sure"];
 
+/* The form is presented as one horizontal carousel at a time. The order below
+   matches the original six sections, plus a final read-only review step. */
+const STEPS = [
+  { id: "participant", title: "Participant details", short: "Details", icon: "User" },
+  { id: "hardware", title: "Hardware and readiness", short: "Hardware", icon: "Laptop" },
+  { id: "tracks", title: "Course track and experience", short: "Tracks", icon: "Layers" },
+  { id: "schedule", title: "Class schedule", short: "Schedule", icon: "CalendarDays" },
+  { id: "payment", title: "Payment by Orange Money", short: "Payment", icon: "Smartphone" },
+  { id: "photo", title: "Passport photo", short: "Photo", icon: "Camera" },
+  { id: "review", title: "Review and submit", short: "Review", icon: "ClipboardCheck" },
+];
+/* Fields whose validation belongs to each carousel step. `org` is optional and
+   the honeypot is never surfaced; they stay on their original steps. */
+const STEP_FIELDS = [
+  ["name", "email", "phone"],
+  ["laptop", "model", "os"],
+  ["skill", "tracks"],
+  ["session"],
+  ["receipt", "additionalImage"],
+  ["passportPhoto"],
+  [],
+];
+
 const INITIAL = {
   name: "", email: "", phone: "+232 ", org: "",
   laptop: "", model: "", os: "",
@@ -190,6 +236,9 @@ function normCode(s) {
   return /^\d{4,6}$/.test(t) ? "TS-VER-" + t : t;
 }
 function fmtSize(b) { return b < 1024 * 1024 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1024 / 1024).toFixed(1) + " MB"; }
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
 function imageFileError(file) {
   const okType = /^image\/(jpeg|png|webp)$/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
   if (!okType) return "Upload a .jpg, .png or .webp image.";
@@ -233,8 +282,12 @@ async function callScript(payload, timeoutMs) {
     }
     if (payload.code === "TS-VER-000000") {
       const m = MOCK || { name: "Sample Student", phone: "+232 76 123456", org: "", laptop: "No", skill: "Beginner", tracks: ["Windows 10/11"], session: COHORTS[0].id };
+      const id = makeRegId();
+      const checkinUrl = GOOGLE_SCRIPT_URL && !/PASTE_YOUR/i.test(GOOGLE_SCRIPT_URL)
+        ? GOOGLE_SCRIPT_URL + "?action=checkin&id=" + encodeURIComponent(id) + "&sig=preview-signature"
+        : "";
       return { status: "ok", emailSent: true, alreadyVerified: false, registration: {
-        regId: makeRegId(), name: m.name, email: payload.email, phone: m.phone, org: m.org || "",
+        regId: id, checkinUrl: checkinUrl, name: m.name, email: payload.email, phone: m.phone, org: m.org || "",
         laptop: m.laptop, model: m.laptopModel || "", os: m.currentOS || "", skill: m.skill, tracks: m.tracks, session: m.session,
       } };
     }
@@ -426,6 +479,64 @@ function DetailRow({ label, value, mono }) {
     <div className="flex items-baseline justify-between gap-4 border-b border-line py-2 last:border-b-0">
       <dt className="text-sm text-mute">{label}</dt>
       <dd className={"text-right text-sm font-semibold text-ink " + (mono ? "font-mono" : "")}>{value}</dd>
+    </div>
+  );
+}
+
+/* Progress is a compact bar on phones and a clickable step rail on larger
+   screens. Completed steps can be revisited; future steps stay locked. */
+function StepProgress({ steps, current, maxVisited, onSelect }) {
+  const label = "Step " + (current + 1) + " of " + steps.length + ": " + steps[current].title;
+  const pct = Math.round(((current + 1) / steps.length) * 100);
+  const complete = Math.round((current / steps.length) * 100);
+  return (
+    <nav aria-label="Registration progress" className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p aria-live="polite" className="min-w-0 text-sm font-semibold text-ink">{label}</p>
+        <p className="hidden shrink-0 text-xs text-mute sm:block">{complete}% complete</p>
+      </div>
+      <div role="progressbar" aria-label="Registration progress" aria-valuemin={1} aria-valuemax={steps.length}
+        aria-valuenow={current + 1} aria-valuetext={label} className="sr-only" />
+      <div aria-hidden="true" className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface2 sm:hidden">
+        <div className="h-full rounded-full bg-solid transition-[width] duration-300" style={{ width: pct + "%" }} />
+      </div>
+      <ol className="mt-4 hidden items-center gap-1 sm:flex">
+        {steps.map((s, i) => {
+          const done = i < current;
+          const active = i === current;
+          const reachable = i <= maxVisited;
+          return (
+            <li key={s.id} className="flex min-w-0 flex-1 items-center gap-1.5 last:flex-none">
+              <button type="button" onClick={() => onSelect(i)} disabled={!reachable}
+                aria-current={active ? "step" : undefined} aria-label={"Go to step " + (i + 1) + ": " + s.title}
+                className={"inline-flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed " +
+                  (active ? "bg-soft text-brand" : reachable ? "text-ink hover:bg-surface2" : "text-mute/60")}>
+                <span className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-[11px] " +
+                  (done ? "border-solid bg-solid text-white" : active ? "border-brand bg-brand text-white" : "border-line bg-surface2 text-mute")}>
+                  {done ? <Icon name="Check" size={13} strokeWidth={3} /> : i + 1}
+                </span>
+                <span className="hidden truncate lg:block">{s.title}</span>
+              </button>
+              {i < steps.length - 1 ? <span aria-hidden="true" className="h-px min-w-2 flex-1 bg-line" /> : null}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+function ReviewBlock({ title, step, onEdit, children }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface2 p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-ink">{title}</p>
+        <button type="button" onClick={onEdit} aria-label={"Edit " + title}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-brand transition hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <Icon name="Pencil" size={13} />Edit
+        </button>
+      </div>
+      <dl>{children}</dl>
     </div>
   );
 }
@@ -710,6 +821,79 @@ function UnlockView({ onVerified, onBack }) {
   );
 }
 
+/* ---------- Signed check-in QR (client-side, level H) ---------- */
+function CheckinQR({ url, regId }) {
+  const canvasRef = useRef(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (!url) { setError("Check-in QR is not available yet."); return; }
+    const factory = window.qrcode;
+    if (typeof factory !== "function") { setError("QR library did not load. Check your connection and reload."); return; }
+    try {
+      const qr = factory(0, "H"); // 0 = auto type, H = 30% error correction
+      qr.addData(url);
+      qr.make();
+      const modules = qr.getModuleCount();
+      const quiet = 4; // QR standard quiet zone, in modules
+      const total = modules + quiet * 2;
+      const cell = Math.max(2, Math.floor(320 / total));
+      const px = cell * total;
+      canvas.width = px;
+      canvas.height = px;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, px, px);
+      ctx.fillStyle = "#0d1526";
+      for (let row = 0; row < modules; row++) {
+        for (let col = 0; col < modules; col++) {
+          if (!qr.isDark(row, col)) continue;
+          ctx.fillRect((col + quiet) * cell, (row + quiet) * cell, cell, cell);
+        }
+      }
+      setError("");
+    } catch (e) {
+      setError("Could not generate the check-in QR.");
+    }
+  }, [url]);
+
+  const download = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || error) return;
+    try {
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = (regId || "registration-pass") + "-checkin-qr.png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      setError("Could not download the QR image.");
+    }
+  };
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-center">
+      <div className="qr-card w-full max-w-[260px] text-center">
+        <canvas ref={canvasRef} className="mx-auto h-auto w-full max-w-[220px]" role="img"
+          aria-label={"Check-in QR for registration " + (regId || "")} />
+        <p className="qr-id mt-2 break-all font-mono text-sm font-semibold tracking-wide">{regId}</p>
+        {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+      </div>
+      <div className="no-print max-w-[260px] text-center sm:text-left">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-mute">Check-in code</p>
+        <p className="mt-1 text-xs leading-relaxed text-mute">Scan this at the venue, or print it with your pass. It contains only a signed link — no personal details.</p>
+        <button type="button" onClick={download} disabled={!!error}
+          className={btnGhost + " mt-3 w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"}>
+          <Icon name="Download" size={16} />Download QR (PNG)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Confirmed pass ---------- */
 function PassItem({ label, children }) {
   return (
@@ -773,6 +957,8 @@ function Pass({ pass, meta, onReset }) {
               <Icon name={copied ? "Check" : "Copy"} size={14} />{copied ? "Copied" : "Copy"}
             </button>
           </div>
+
+          <CheckinQR url={pass.checkinUrl || ""} regId={pass.regId} />
 
           {pass.photoUrl ? (
             <div className="mt-6 flex items-center gap-4">
@@ -842,13 +1028,41 @@ function App() {
   const [pass, setPass] = useState(null);
   const [meta, setMeta] = useState({});
   const [serverStatus, setServerStatus] = useState(null);
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState("forward");
+  const [maxVisited, setMaxVisited] = useState(0);
   const mainRef = useRef(null);
+  const carouselRef = useRef(null);
+  const focusRef = useRef(null);
+  const submitLock = useRef(false);
   const mounted = useRef(false);
+  const stepMounted = useRef(false);
 
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
-    try { mainRef.current && mainRef.current.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+    try {
+      mainRef.current && mainRef.current.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    } catch (e) {}
   }, [view]);
+
+  /* Bring the active carousel section into view and restore focus when a
+     validation error sent the user back to an earlier step. */
+  useEffect(() => {
+    if (!stepMounted.current) { stepMounted.current = true; return; }
+    if (view !== "form") return;
+    try {
+      carouselRef.current && carouselRef.current.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    } catch (e) {}
+    const target = focusRef.current;
+    if (!target) return;
+    focusRef.current = null;
+    const run = () => {
+      const el = document.getElementById(target) || document.getElementById(target + "-group");
+      if (!el) return;
+      try { el.focus(); el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" }); } catch (e) {}
+    };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(run); else run();
+  }, [step, view]);
 
   useEffect(() => {
     if (IS_PREVIEW || !GOOGLE_SCRIPT_URL) return;
@@ -887,6 +1101,51 @@ function App() {
     touch("tracks");
   };
 
+  const focusField = (key) => {
+    const el = document.getElementById(key) || document.getElementById(key + "-group");
+    if (el) {
+      try { el.focus(); el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" }); } catch (e) {}
+    }
+  };
+  const markStepFields = (index) => {
+    const fields = STEP_FIELDS[index] || [];
+    if (!fields.length) return;
+    setTouched((p) => {
+      const next = Object.assign({}, p);
+      fields.forEach((f) => { next[f] = true; });
+      return next;
+    });
+  };
+  const firstBadField = (index) => (STEP_FIELDS[index] || []).find((f) => errors[f]);
+
+  /* Navigation is validation-aware: moving forward re-checks every step being
+     skipped, so a progress shortcut can never bypass an invalid field. */
+  const goToStep = (target) => {
+    if (target === step || target < 0 || target >= STEPS.length) return;
+    if (target > step) {
+      for (let i = step; i < target; i++) {
+        const bad = firstBadField(i);
+        if (bad) {
+          markStepFields(i);
+          focusRef.current = bad;
+          setDirection("back");
+          setStep(i);
+          return;
+        }
+      }
+    }
+    setDirection(target > step ? "forward" : "back");
+    setStep(target);
+    setMaxVisited((m) => Math.max(m, target));
+  };
+  const goNext = () => {
+    if (step >= STEPS.length - 1) return;
+    const bad = firstBadField(step);
+    if (bad) { markStepFields(step); focusField(bad); return; }
+    goToStep(step + 1);
+  };
+  const goBack = () => { if (step > 0) goToStep(step - 1); };
+
   const clearReceipt = () => { if (receipt) { try { URL.revokeObjectURL(receipt.url); } catch (e) {} } setReceipt(null); };
   const clearAdditionalImage = () => { if (additionalImage) { try { URL.revokeObjectURL(additionalImage.url); } catch (e) {} } setAdditionalImage(null); };
   const clearPassportPhoto = () => { if (passportPhoto) { try { URL.revokeObjectURL(passportPhoto.url); } catch (e) {} } setPassportPhoto(null); };
@@ -919,12 +1178,13 @@ function App() {
     clearReceipt(); clearAdditionalImage(); clearPassportPhoto();
     setV(INITIAL); setReceiptError(""); setAdditionalImageError(""); setPassportPhotoError(""); setTouched({}); setAttempted(false); setSubmitError("");
     setPending(null); setPass(null); setMeta({}); setView("form");
+    setDirection("back"); setStep(0); setMaxVisited(0); focusRef.current = null; submitLock.current = false;
   };
 
   const goVerified = (res) => {
     const r = res.registration;
     setPass({
-      regId: r.regId, name: r.name, email: r.email, phone: r.phone, org: r.org || "",
+      regId: r.regId, checkinUrl: r.checkinUrl || "", name: r.name, email: r.email, phone: r.phone, org: r.org || "",
       laptop: r.laptop, model: r.model || "", os: r.os || "", skill: r.skill,
       tracks: Array.isArray(r.tracks) ? r.tracks : String(r.tracks || "").split(",").map((s) => s.trim()).filter(Boolean),
       session: r.session,
@@ -942,7 +1202,7 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || submitLock.current) return;
     if (!IS_PREVIEW && !LIVE_CONFIG_READY) {
       setSubmitError("Registration is paused until " + FRONTEND_CONFIG_PROBLEMS.join(" and ") + " are configured.");
       return;
@@ -951,11 +1211,20 @@ function App() {
     setAttempted(true);
     if (errorCount > 0) {
       const first = FIELD_ORDER.find((k) => errors[k]);
-      const el = document.getElementById(first) || document.getElementById(first + "-group");
-      if (el) { try { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (err) {} }
+      const target = Math.max(0, STEP_FIELDS.findIndex((fields) => fields.indexOf(first) >= 0));
+      focusRef.current = first;
+      if (target !== step) {
+        markStepFields(target);
+        setDirection("back");
+        setStep(target);
+      } else {
+        markStepFields(step);
+        focusField(first);
+      }
       return;
     }
     setSubmitError("");
+    submitLock.current = true;
     setSubmitting(true);
     try {
       const img = await prepareReceipt(receipt.file, "receipt");
@@ -1001,7 +1270,10 @@ function App() {
       }
     } catch (err) {
       setSubmitError(netMessage(err) + " Your details and images are still filled in.");
-    } finally { setSubmitting(false); }
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1015,7 +1287,7 @@ function App() {
         ) : view === "unlock" ? (
           <UnlockView onVerified={goVerified} onBack={() => setView("form")} />
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="carousel space-y-5" ref={carouselRef}>
             {!IS_PREVIEW && !LIVE_CONFIG_READY ? (
               <Notice tone="bad" icon="TriangleAlert">
                 <p className="font-semibold">Registration is not configured yet.</p>
@@ -1043,132 +1315,243 @@ function App() {
               <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={v.website} onChange={(e) => set("website", e.target.value)} />
             </div>
 
-            <Section step="1" title="Participant details" subtitle="Your class updates and verification code are sent to these contacts.">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Field id="name" label="Full name" required error={shown("name")}>
-                    <TextInput id="name" value={v.name} onChange={(e) => set("name", e.target.value)} onBlur={() => touch("name")}
-                      error={shown("name")} valid={isValid("name")} autoComplete="name" placeholder="e.g. Aminata Kamara" />
-                  </Field>
-                </div>
-                <Field id="email" label="Email address" required error={shown("email")} hint="We email your confirmation here once payment is verified.">
-                  <TextInput id="email" type="email" value={v.email} onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
-                    error={shown("email")} valid={isValid("email")} autoComplete="email" inputMode="email" placeholder="you@example.com" />
-                </Field>
-                <Field id="phone" label="WhatsApp number" required error={shown("phone")} hint="Your verification code is sent here.">
-                  <TextInput id="phone" type="tel" value={v.phone} onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
-                    error={shown("phone")} valid={isValid("phone")} autoComplete="tel" inputMode="tel" placeholder="+232 76 123456" />
-                </Field>
-                <div className="sm:col-span-2">
-                  <Field id="org" label="Department / Organization" optional>
-                    <TextInput id="org" value={v.org} onChange={(e) => set("org", e.target.value)} autoComplete="organization" placeholder="e.g. Computer Science, UNIMTECH" />
-                  </Field>
+            <StepProgress steps={STEPS} current={step} maxVisited={maxVisited} onSelect={goToStep} />
+
+            {attempted && errorCount > 0 ? (
+              <p role="status" className="flex items-center gap-2 rounded-xl border border-bad bg-surface px-4 py-3 text-sm font-medium text-bad">
+                <Icon name="CircleAlert" size={16} />{errorCount} {errorCount === 1 ? "field needs" : "fields need"} your attention before you can submit.
+              </p>
+            ) : null}
+
+            <div className="carousel-viewport">
+              <div key={step} data-direction={direction} className="carousel-step space-y-5">
+                {step === 0 ? (
+                  <Section step="1" title="Participant details" subtitle="Your class updates and verification code are sent to these contacts.">
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <Field id="name" label="Full name" required error={shown("name")}>
+                          <TextInput id="name" value={v.name} onChange={(e) => set("name", e.target.value)} onBlur={() => touch("name")}
+                            error={shown("name")} valid={isValid("name")} autoComplete="name" placeholder="e.g. Aminata Kamara" />
+                        </Field>
+                      </div>
+                      <Field id="email" label="Email address" required error={shown("email")} hint="We email your confirmation here once payment is verified.">
+                        <TextInput id="email" type="email" value={v.email} onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
+                          error={shown("email")} valid={isValid("email")} autoComplete="email" inputMode="email" placeholder="you@example.com" />
+                      </Field>
+                      <Field id="phone" label="WhatsApp number" required error={shown("phone")} hint="Your verification code is sent here.">
+                        <TextInput id="phone" type="tel" value={v.phone} onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
+                          error={shown("phone")} valid={isValid("phone")} autoComplete="tel" inputMode="tel" placeholder="+232 76 123456" />
+                      </Field>
+                      <div className="sm:col-span-2">
+                        <Field id="org" label="Department / Organization" optional>
+                          <TextInput id="org" value={v.org} onChange={(e) => set("org", e.target.value)} autoComplete="organization" placeholder="e.g. Computer Science, UNIMTECH" />
+                        </Field>
+                      </div>
+                    </div>
+                  </Section>
+                ) : null}
+
+                {step === 1 ? (
+                  <Section step="2" title="Hardware and readiness" subtitle="This is a hands-on class, so we plan machines around your answer.">
+                    <Group id="laptop" legend="Will you bring your own laptop?" required error={shown("laptop")}>
+                      <div className="grid max-w-md grid-cols-2 gap-2 rounded-xl bg-surface2 p-1.5" role="radiogroup">
+                        {[["yes", "Yes", "Laptop"], ["no", "No", "Monitor"]].map((o) => (
+                          <label key={o[0]} className="relative block cursor-pointer">
+                            <input type="radio" name="laptop" value={o[0]} checked={v.laptop === o[0]} onChange={pick("laptop")} className="peer sr-only" />
+                            <span className={"flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand " +
+                              (v.laptop === o[0] ? "bg-solid text-white shadow-sm" : "text-mute hover:text-ink")}>
+                              <Icon name={o[2]} size={17} />{o[1]}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </Group>
+
+                    <Collapse open={v.laptop === "yes"}>
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <Field id="model" label="Laptop brand / model" required error={shown("model")} hint="For example HP ProBook 450, Dell Latitude, MacBook Air.">
+                          <TextInput id="model" value={v.model} onChange={(e) => set("model", e.target.value)} onBlur={() => touch("model")}
+                            error={shown("model")} valid={isValid("model")} placeholder="e.g. HP ProBook 450 G8" />
+                        </Field>
+                        <Field id="os" label="Current operating system" required error={shown("os")} hint="Pick a suggestion or type your own.">
+                          <TextInput id="os" list="os-options" value={v.os} onChange={(e) => set("os", e.target.value)} onBlur={() => touch("os")}
+                            error={shown("os")} valid={isValid("os")} placeholder="e.g. Windows 10" />
+                          <datalist id="os-options">{OS_SUGGESTIONS.map((o) => <option key={o} value={o} />)}</datalist>
+                        </Field>
+                      </div>
+                    </Collapse>
+
+                    <Collapse open={v.laptop === "no"}>
+                      <div className="flex items-start gap-3 rounded-xl border border-line bg-soft p-4 text-sm text-ink">
+                        <Icon name="Info" size={18} className="mt-0.5 text-brand" />
+                        <p className="min-w-0">Shared lab workstations are limited and assigned first-come, first-served. Registering early gives you the best chance of getting one.</p>
+                      </div>
+                    </Collapse>
+                  </Section>
+                ) : null}
+
+                {step === 2 ? (
+                  <Section step="3" title="Course track and experience" subtitle="Tell us where you are starting from and what you want to practise.">
+                    <Group id="skill" legend="Skill level" required error={shown("skill")}>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {SKILLS.map((s) => (
+                          <OptionCard key={s.id} type="radio" name="skill" value={s.id} checked={v.skill === s.id} onChange={pick("skill")} icon={s.icon} title={s.id} desc={s.desc} />
+                        ))}
+                      </div>
+                    </Group>
+                    <Group id="tracks" legend="Target OS tracks" required hint="Select all that apply." error={shown("tracks")}>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {TRACKS.map((t) => (
+                          <OptionCard key={t.id} type="checkbox" name="tracks" value={t.id} checked={v.tracks.indexOf(t.id) >= 0} onChange={() => toggleTrack(t.id)} icon={t.icon} title={t.id} desc={t.desc} />
+                        ))}
+                      </div>
+                    </Group>
+                  </Section>
+                ) : null}
+
+                {step === 3 ? (
+                  <Section step="4" title={CONFIG.durationWeeks + "-Week class schedule"} subtitle={CONFIG.classDays + ". Exact session times will be confirmed by TechStuff."}>
+                    <Curriculum />
+                    <Group id="session" legend="Class schedule" required error={shown("session")}>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {COHORTS.map((s) => (
+                          <OptionCard key={s.id} type="radio" name="session" value={s.id} checked={v.session === s.id} onChange={pick("session")} icon={s.icon} title={s.id} desc={s.desc} />
+                        ))}
+                      </div>
+                    </Group>
+                  </Section>
+                ) : null}
+
+                {step === 4 ? (
+                  <Section step="5" title="Payment by Orange Money" subtitle="Orange Money is the only payment method. Your seat is held after we verify your receipt.">
+                    <OrangeMoneyPanel />
+                    <Group id="receipt" legend="Orange Money payment screenshot" required error={null}>
+                      <Dropzone id="receipt" receipt={receipt} error={shown("receipt")} onFile={chooseReceipt}
+                        onRemove={() => { clearReceipt(); setReceiptError(""); touch("receipt"); }} />
+                    </Group>
+                    <Group id="additionalImage" legend="Additional image" hint="Optional" error={null}>
+                      <Dropzone id="additionalImage" title="Drop a second image here, or click to choose"
+                        alt="Preview of your additional image" hint="This image is stored with your registration for review."
+                        receipt={additionalImage} error={shown("additionalImage")} onFile={chooseAdditionalImage}
+                        onRemove={() => { clearAdditionalImage(); setAdditionalImageError(""); touch("additionalImage"); }} />
+                    </Group>
+                  </Section>
+                ) : null}
+
+                {step === 5 ? (
+                  <Section step="6" title="Passport photo" subtitle="Required. Your photo appears on your pass and is kept privately to process your certificate after you complete the class.">
+                    <Group id="passportPhoto" legend="Passport photo" required error={null}>
+                      <Dropzone id="passportPhoto" title="Drop your passport photo here, or click to choose"
+                        alt="Preview of your passport photo" hint="Use a clear head-and-shoulders photo in .jpg, .png or .webp format (max 5 MB). It is stored privately and shown on your pass."
+                        receipt={passportPhoto} error={shown("passportPhoto")} onFile={choosePassportPhoto}
+                        onRemove={() => { clearPassportPhoto(); setPassportPhotoError(""); touch("passportPhoto"); }} />
+                    </Group>
+                  </Section>
+                ) : null}
+
+                {step === 6 ? (
+                  <Section step="7" title="Review and submit" subtitle="Check every detail before sending your registration for payment verification.">
+                    <div className="space-y-4">
+                      <ReviewBlock step={1} title="Participant details" onEdit={() => goToStep(0)}>
+                        <DetailRow label="Full name" value={v.name.trim() || "Not provided"} />
+                        <DetailRow label="Email address" value={v.email.trim() || "Not provided"} />
+                        <DetailRow label="WhatsApp number" value={v.phone.trim() || "Not provided"} />
+                        <DetailRow label="Department / Organization" value={v.org.trim() || "Not provided"} />
+                      </ReviewBlock>
+                      <ReviewBlock step={2} title="Hardware and readiness" onEdit={() => goToStep(1)}>
+                        <DetailRow label="Bring your own laptop" value={v.laptop === "yes" ? "Yes" : "No"} />
+                        {v.laptop === "yes" ? (
+                          <>
+                            <DetailRow label="Laptop brand / model" value={v.model.trim() || "Not provided"} />
+                            <DetailRow label="Current operating system" value={v.os.trim() || "Not provided"} />
+                          </>
+                        ) : (
+                          <DetailRow label="Workstation" value="Shared lab workstation (first-come, first-served)" />
+                        )}
+                      </ReviewBlock>
+                      <ReviewBlock step={3} title="Course track and experience" onEdit={() => goToStep(2)}>
+                        <DetailRow label="Skill level" value={v.skill || "Not selected"} />
+                        <div className="border-b border-line py-2 last:border-b-0">
+                          <dt className="text-sm text-mute">Target OS tracks</dt>
+                          <dd className="mt-1 flex flex-wrap gap-2">
+                            {v.tracks.length
+                              ? v.tracks.map((t) => <span key={t} className="rounded-full bg-soft px-3 py-1 text-[13px] font-medium text-brand">{t}</span>)
+                              : <span className="text-sm font-semibold text-ink">Not selected</span>}
+                          </dd>
+                        </div>
+                      </ReviewBlock>
+                      <ReviewBlock step={4} title="Class schedule" onEdit={() => goToStep(3)}>
+                        <DetailRow label="Schedule" value={v.session || "Not selected"} />
+                      </ReviewBlock>
+                      <ReviewBlock step={5} title="Payment by Orange Money" onEdit={() => goToStep(4)}>
+                        <DetailRow label="Class fee" value={CONFIG.fee} />
+                        <DetailRow label="Merchant / account number" value={CONFIG.orangeMoney.number} mono />
+                        <DetailRow label="Payment screenshot" value={receipt ? receipt.file.name : "Not uploaded"} />
+                        {additionalImage ? <DetailRow label="Additional image" value={additionalImage.file.name} /> : null}
+                      </ReviewBlock>
+                      <ReviewBlock step={6} title="Passport photo" onEdit={() => goToStep(5)}>
+                        <DetailRow label="Passport photo" value={passportPhoto ? passportPhoto.file.name : "Not uploaded"} />
+                        <p className="mt-2 text-xs text-mute">Stored privately and shown on your pass for certificate processing after the class.</p>
+                      </ReviewBlock>
+                    </div>
+                    {receipt || additionalImage || passportPhoto ? (
+                      <div className="mt-5 flex flex-wrap gap-4">
+                        {receipt ? (
+                          <figure className="min-w-0 flex-1">
+                            <img src={receipt.url} alt="Preview of your Orange Money payment screenshot" className="max-h-40 w-full rounded-lg border border-line bg-surface2 object-contain" />
+                            <figcaption className="mt-1 text-center text-xs text-mute">Payment screenshot</figcaption>
+                          </figure>
+                        ) : null}
+                        {additionalImage ? (
+                          <figure className="min-w-0 flex-1">
+                            <img src={additionalImage.url} alt="Preview of your additional image" className="max-h-40 w-full rounded-lg border border-line bg-surface2 object-contain" />
+                            <figcaption className="mt-1 text-center text-xs text-mute">Additional image</figcaption>
+                          </figure>
+                        ) : null}
+                        {passportPhoto ? (
+                          <figure className="min-w-0 flex-1">
+                            <img src={passportPhoto.url} alt="Preview of your passport photo" className="max-h-40 w-full rounded-lg border border-line bg-surface2 object-contain" />
+                            <figcaption className="mt-1 text-center text-xs text-mute">Passport photo</figcaption>
+                          </figure>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <div className="mt-5">
+                      <Notice tone="warn" icon="CircleAlert">
+                        Submitting does not confirm your payment or reserve a seat. TechStuff verifies your Orange Money receipt and sends a Unique Verification Code before your registration is confirmed.
+                      </Notice>
+                    </div>
+                  </Section>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" onClick={goBack} disabled={step === 0}
+                  className={btnGhost + " disabled:cursor-not-allowed disabled:opacity-50"}>
+                  <Icon name="ArrowLeft" size={17} />Previous
+                </button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                  <p className="text-center text-xs text-mute sm:text-right">Step {step + 1} of {STEPS.length}</p>
+                  {step < STEPS.length - 1 ? (
+                    <button key="continue" type="button" onClick={goNext} className={btnPrimary + " sm:w-auto"}>
+                      Continue<Icon name="ArrowRight" size={17} />
+                    </button>
+                  ) : (
+                    <button key="submit" type="submit" disabled={submitting} className={btnPrimary + " sm:w-auto"}>
+                      {submitting
+                        ? (<><Icon name="LoaderCircle" size={18} className="animate-spin" />Submitting...</>)
+                        : (<>Submit Payment for Verification<Icon name="ArrowRight" size={18} /></>)}
+                    </button>
+                  )}
                 </div>
               </div>
-            </Section>
-
-            <Section step="2" title="Hardware and readiness" subtitle="This is a hands-on class, so we plan machines around your answer.">
-              <Group id="laptop" legend="Will you bring your own laptop?" required error={shown("laptop")}>
-                <div className="grid max-w-md grid-cols-2 gap-2 rounded-xl bg-surface2 p-1.5" role="radiogroup">
-                  {[["yes", "Yes", "Laptop"], ["no", "No", "Monitor"]].map((o) => (
-                    <label key={o[0]} className="relative block cursor-pointer">
-                      <input type="radio" name="laptop" value={o[0]} checked={v.laptop === o[0]} onChange={pick("laptop")} className="peer sr-only" />
-                      <span className={"flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand " +
-                        (v.laptop === o[0] ? "bg-solid text-white shadow-sm" : "text-mute hover:text-ink")}>
-                        <Icon name={o[2]} size={17} />{o[1]}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </Group>
-
-              <Collapse open={v.laptop === "yes"}>
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field id="model" label="Laptop brand / model" required error={shown("model")} hint="For example HP ProBook 450, Dell Latitude, MacBook Air.">
-                    <TextInput id="model" value={v.model} onChange={(e) => set("model", e.target.value)} onBlur={() => touch("model")}
-                      error={shown("model")} valid={isValid("model")} placeholder="e.g. HP ProBook 450 G8" />
-                  </Field>
-                  <Field id="os" label="Current operating system" required error={shown("os")} hint="Pick a suggestion or type your own.">
-                    <TextInput id="os" list="os-options" value={v.os} onChange={(e) => set("os", e.target.value)} onBlur={() => touch("os")}
-                      error={shown("os")} valid={isValid("os")} placeholder="e.g. Windows 10" />
-                    <datalist id="os-options">{OS_SUGGESTIONS.map((o) => <option key={o} value={o} />)}</datalist>
-                  </Field>
-                </div>
-              </Collapse>
-
-              <Collapse open={v.laptop === "no"}>
-                <div className="flex items-start gap-3 rounded-xl border border-line bg-soft p-4 text-sm text-ink">
-                  <Icon name="Info" size={18} className="mt-0.5 text-brand" />
-                  <p className="min-w-0">Shared lab workstations are limited and assigned first-come, first-served. Registering early gives you the best chance of getting one.</p>
-                </div>
-              </Collapse>
-            </Section>
-
-            <Section step="3" title="Course track and experience" subtitle="Tell us where you are starting from and what you want to practise.">
-              <Group id="skill" legend="Skill level" required error={shown("skill")}>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {SKILLS.map((s) => (
-                    <OptionCard key={s.id} type="radio" name="skill" value={s.id} checked={v.skill === s.id} onChange={pick("skill")} icon={s.icon} title={s.id} desc={s.desc} />
-                  ))}
-                </div>
-              </Group>
-              <Group id="tracks" legend="Target OS tracks" required hint="Select all that apply." error={shown("tracks")}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {TRACKS.map((t) => (
-                    <OptionCard key={t.id} type="checkbox" name="tracks" value={t.id} checked={v.tracks.indexOf(t.id) >= 0} onChange={() => toggleTrack(t.id)} icon={t.icon} title={t.id} desc={t.desc} />
-                  ))}
-                </div>
-              </Group>
-            </Section>
-
-            <Section step="4" title={CONFIG.durationWeeks + "-Week class schedule"} subtitle={CONFIG.classDays + ". Exact session times will be confirmed by TechStuff."}>
-              <Curriculum />
-              <Group id="session" legend="Class schedule" required error={shown("session")}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {COHORTS.map((s) => (
-                    <OptionCard key={s.id} type="radio" name="session" value={s.id} checked={v.session === s.id} onChange={pick("session")} icon={s.icon} title={s.id} desc={s.desc} />
-                  ))}
-                </div>
-              </Group>
-            </Section>
-
-            <Section step="5" title="Payment by Orange Money" subtitle="Orange Money is the only payment method. Your seat is held after we verify your receipt.">
-              <OrangeMoneyPanel />
-              <Group id="receipt" legend="Orange Money payment screenshot" required error={null}>
-                <Dropzone id="receipt" receipt={receipt} error={shown("receipt")} onFile={chooseReceipt}
-                  onRemove={() => { clearReceipt(); setReceiptError(""); touch("receipt"); }} />
-              </Group>
-              <Group id="additionalImage" legend="Additional image" hint="Optional" error={null}>
-                <Dropzone id="additionalImage" title="Drop a second image here, or click to choose"
-                  alt="Preview of your additional image" hint="This image is stored with your registration for review."
-                  receipt={additionalImage} error={shown("additionalImage")} onFile={chooseAdditionalImage}
-                  onRemove={() => { clearAdditionalImage(); setAdditionalImageError(""); touch("additionalImage"); }} />
-              </Group>
-            </Section>
-
-            <Section step="6" title="Passport photo" subtitle="Required. Your photo appears on your pass and is kept privately to process your certificate after you complete the class.">
-              <Group id="passportPhoto" legend="Passport photo" required error={null}>
-                <Dropzone id="passportPhoto" title="Drop your passport photo here, or click to choose"
-                  alt="Preview of your passport photo" hint="Use a clear head-and-shoulders photo in .jpg, .png or .webp format (max 5 MB). It is stored privately and shown on your pass."
-                  receipt={passportPhoto} error={shown("passportPhoto")} onFile={choosePassportPhoto}
-                  onRemove={() => { clearPassportPhoto(); setPassportPhotoError(""); touch("passportPhoto"); }} />
-              </Group>
-            </Section>
-
-            <div className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
-              {submitError ? <div className="mb-4"><Notice tone="bad" icon="CircleAlert">{submitError}</Notice></div> : null}
-              {attempted && errorCount > 0 ? (
-                <p role="status" className="mb-4 flex items-center gap-2 text-sm font-medium text-bad">
-                  <Icon name="CircleAlert" size={16} />{errorCount} {errorCount === 1 ? "field needs" : "fields need"} your attention before you can submit.
-                </p>
+              {step === STEPS.length - 1 && submitError ? (
+                <div className="mt-4"><Notice tone="bad" icon="CircleAlert">{submitError}</Notice></div>
               ) : null}
-              <button type="submit" disabled={submitting} className={btnPrimary}>
-                {submitting
-                  ? (<><Icon name="LoaderCircle" size={18} className="animate-spin" />Submitting...</>)
-                  : (<>Submit Payment for Verification<Icon name="ArrowRight" size={18} /></>)}
-              </button>
               {submitting ? <p role="status" className="mt-3 text-center text-xs text-mute">Uploading your images. Please keep this page open.</p> : null}
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-mute">
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-mute">
                 <Icon name="ShieldCheck" size={14} />Your details and images are used only to manage this class.
               </p>
             </div>
